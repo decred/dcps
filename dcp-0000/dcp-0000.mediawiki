@@ -1,0 +1,325 @@
+<pre>
+DCP: 0000
+Title: DCP Process
+Author: Dave Collins <davec@decred.org>
+Status: Active
+Created: 2017-05-04
+License: CC0-1.0
+</pre>
+
+==Abstract==
+
+A Decred Change Proposal, or DCP for short, is a design document that describes
+potential protocol or consensus changes to Decred.  Due to Decred's
+decentralized governance structure, any proposed changes to consensus require
+super-majority stakeholder approval via the integrated on-chain proof-of-stake
+voting infrastructure.  Consequently, DCPs primarily serve for documentation,
+fostering cross-implementation compatibility, and helping ensure proper
+engineering rigor is followed.
+
+Prior to putting a consensus change to an on-chain vote, the proposed change
+must first be accompanied by a DCP as described in this document along with
+providing a working and tested implementation, and the rule change must be gated
+behind a voting agenda which ensures the stakeholders are provided with the
+opportunity to vote to accept or reject the change.
+
+It is important to note that DCPs are intended to be the end result of an
+off-chain proposal and voting system that deals with more generalized proposal
+submissions.  It is through that system that all initial proposals for consensus
+or protocol changes will be brought to life, undergo collaboration, and be
+subject to an initial community vote to determine if the work necessary to
+create a working implementation, its associated DCP, and an on-chain vote for
+the rule change should be performed.
+
+However, the aforementioned proposal system is not yet available.  This document
+will be updated with more details once it is available.
+
+==Formatting Specification==
+
+All DCPs must be written using the mediawiki format, and, where relevant, should
+be comprised of the sections detailed in this specification.
+
+===Header Preamble===
+
+Every DCP must begin with an RFC 822 style header preamble with the headers in
+the following order.  Headers marked with an asterisk (*) are optional.  All
+other headers are required.
+
+<pre>
+  DCP: <DCP number, or "?" before being assigned>
+  Title: <DCP title; maximum 44 characters>
+  Author: <list of author names and email addresses>
+  Status: <Defined | Voting | Locked In | Active | Failed | Replaced | Obsolete>
+  Created: <date created on, in ISO 8601 (yyyy-mm-dd) format>
+  License: CC0-1.0
+* License-Code: <abbreviation for source code under different approved license(s)>
+* Requires: <DCP number(s)>
+* Replaces: <DCP number>
+* Superseded-By: <DCP number>
+</pre>
+
+The '''Author''' header lists the names and email addresses of all the
+authors/owners of the proposal.  The format of the '''Author''' header value
+must be:
+
+  Random J. User <address@dom.ain>
+
+Multiple authors must be on a separate line following RFC 2822 continuation line
+conventions.
+
+The '''Status''' header specifies the current status of the DCP as described in
+the [[#Status|status]] section.
+
+The '''Created''' header records the date that the DCP was assigned a number.
+Dates must be in ISO 8601 (yyyy-mm-dd) format, e.g. 2017-05-04.
+
+The '''License''' and '''License-Code''' headers must use approved licenses as
+defined in the [[#Licensing|licensing]] section.
+
+DCPs may have a '''Requires''' header, indicating the DCP number(s) that the
+current one depends on.
+
+DCPs may also have a '''Superseded-By''' header indicating that a DCP has
+been rendered obsolete by a newer version.  The value is the number of the DCP
+that replaces the current one.  The newer DCP must have a '''Replaces''' header
+containing the number of the DCP that it renders obsolete.
+
+===Standard Sections===
+
+The following sections are standard and thus should typically be included with
+all DCPs.  There are some instances where some of the sections might not apply.
+
+====Abstract====
+
+The abstract section provides a short overview of the proposal.  It is required
+for all DCPs.
+
+====Motivation====
+
+The motivation section explains in detail what the proposal addresses and why
+it is necessary.  This section is critical and required for all consensus change
+proposals since consensus changes, in particular, must not be made lightly.
+
+Consensus changes typically involve updates to a wide amount of software across
+the entire ecosystem and, at the very least, require stakeholder participation
+in the form of education and voting.  In short, consensus changes often require
+the extremely valuable commodities of time and attention from everyone in the
+ecosystem and, as such, must have a compelling motivation.
+
+====Specification====
+
+The specification precisely describes the semantics of the proposal.  In
+particular, it must be detailed enough to foster multiple interoperable
+implementations of Decred software.
+
+It is important to consider the implications of cross-platform compatibility
+when providing a specification since it is also critical to achieve the
+aforementioned goal of fostering multiple implementations.
+
+For example, floating point math often produces slightly different results
+between programming languages due to issues such as rounding errors and
+uncertainty in their respective libraries.  Consequently, integer math is
+generally preferred.
+
+Another example is that the precision of regular integers in some languages may
+vary depending on the architecture (e.g 32-bit versus 64-bit).  Specifications
+must consider these differences and ensure they are adequately defined.
+
+Morever, consensus code must strive to actively avoid 3rd-party dependencies
+since other projects often have very different, and less strict, requirements
+than what is required by consensus code.
+
+====Rationale====
+
+The rationale section provides insight into the final design laid out in the
+specification.  It should include topics such as why particular design decisions
+were made, theory of operation, alternate designs, and other related work.
+
+This section, like the motivation section, is also critical and required for
+consensus change proposals.  Stakeholders need to make an informed decision on
+any new rules introduced to the network and the rationale for choosing a
+particular design is a key consideration.
+
+Keep in mind that fully validating nodes will be responsible for enforcing any
+rules set forth by the proposal and archival nodes will effectively have to
+enforce the rules ''forever''.
+
+====Deployment====
+
+The deployment section provides details related to how the proposal will be
+deployed to the network.
+
+As mentioned in [[#Abstract|Abstract]] section of this document, all consensus
+changes must make use of a voting agenda.
+
+The voting agenda definition should be of the following form:
+
+{|
+!Name!!Setting
+|-
+|Deployment Version||''version''
+|-
+|Agenda ID||''short, descriptive agenda id''
+|-
+|Agenda Description||''description of the agenda''
+|-
+|Start Time||''unix timestamp (human-readable date)''
+|-
+|Expire Time||''unix timestamp (human-readable date)''
+|-
+|Mask||''agenda mask in hex that defines which bits are used (Bits #, #, ...)''
+|-
+|Choices||{|
+!Choice!!English Description!!Bits
+|-
+|abstain||''short description of the choice''||0x00
+|-
+|no||''short description of the choice''||''value of choice in hex (Bit #)''
+|-
+|option 1||''short description of the choice''||''value of choice in hex (Bit #)''
+|-
+|option 2||''short description of the choice''||''value of choice in hex (Bit #)''
+|}
+|}
+
+====Compatibility====
+
+The compatibility section is recommended for all proposals and is required for
+any proposals that introduce backwards incompatibilities.  In general, this
+section should discuss exactly how the proposal affects existing software.
+
+A proposal that is backwards compatible should specifically state that, along
+with an explanation of why it is backwards compatible.
+
+A proposal that is '''not''' backwards compatible must also provide a plan for
+handling the incompatibilities.
+
+====Reference Implementation====
+
+The reference implementation section is required for all consensus change
+proposals since, due to Decred's decentralized governance structure, all
+proposals which involve changes to consensus must undergo a voting agenda which
+implies that proposals must also already have a working, tested, and
+well-documented implementation that lies dormant in the code and therefore can
+be activated should the change be accepted by the stakeholders.
+
+====Test Vectors====
+
+The test vectors section applies to any proposals that introduce facets that can
+reasonably be independently tested and serves to help multiple implementations
+ensure they are compatibile.  Some examples where test vectors might reasonably
+be included are new algorithms, new standard script types, smart contracts,
+additional script opcodes, and changes to the block or transaction structure or
+hash generation.
+
+====Acknowledgements====
+
+The acknowledgements section provides a standard mechanism for giving
+recognition.  This might include citing contributors and collaborators who
+provided direct technical assistance, participated in intellectual discussions,
+or otherwise provided assistance with the proposal.
+
+This section also should be used to cite relevant source material as needed.
+
+Acknowledgements that are not directly related to the proposal, such as personal
+encouragement, should '''not''' be included.
+
+====Copyright====
+
+All DCPs must be licensed under the terms set forth in the [[#Licensing|Licensing]]
+section.
+
+===Other Sections===
+
+In addition to the [[#Standard_Sections|standard sections]], the DCP may contain
+any other sections that the author feels are relevant to the proposal.  For
+example, some proposals may wish to contain supplemental data such as simulation
+results, examples, footnotes, and future extensions.
+
+==Status==
+
+===Specification===
+
+The status of a DCP is primarily defined by the on-chain voting sytem.  There
+are two additional status indicators intended to allow clear DCP status
+signalling in case future updates replace or obsolete a given DCP.
+
+The following chart shows the progression of a DCP according to the voting
+process:
+
+<img src="./dcp_status.png" />
+
+DCPs which involve a consensus change automatically progress to the '''Voting''',
+'''Locked In''', '''Active''' or '''Failed''' status depending on the result of
+the associated on-chain vote.
+
+It is also possible for the semantics defined by a DCP to be replaced or
+rendered obsolete by a newer DCP.  In that case, the status may become
+'''Replaced''' or '''Obsolete'''.
+
+===Rationale===
+
+One of the most important features of Decred is its democratic handling of
+potentially controversial consensus changes via its decentralized, transparent,
+cryptographically-secured, on-chain voting system.  This means that whether or
+not a given consensus change proposal progresses to an '''Active''' or
+'''Failed''' status is entirely based on the results of the on-chain vote.
+
+There are no additional status indicators for things such a drafts and
+withdrawals since all DCPs are only created as the result of an off-chain
+proposal and voting system that deals with those issues has already been
+completed.
+
+==Licensing==
+
+===Specification===
+
+====DCP Text====
+
+New DCPs are required to be licensed with the
+[https://creativecommons.org/publicdomain/zero/1.0 CC0-1.0: Creative Commons CC0 1.0 Universal]
+license and must declare this by setting the '''License''' header in the
+[[#Header_Preamble|preamble]] to its abbreviation, '''CC0-1.0'''.
+
+====Source Code====
+
+The source code in the DCP may optionally be licensed using a separate license
+per the following list.  The separate code license must be declared by setting
+the '''License-Code''' header in the [[#Header_Preamble|preamble]] to its
+abbreviation.
+
+* ISC: [https://opensource.org/licenses/ISC ISC License]
+* BSD-2-Clause: [https://opensource.org/licenses/BSD-2-Clause OSI-approved BSD 2-clause license]
+* BSD-3-Clause: [https://opensource.org/licenses/BSD-3-Clause OSI-approved BSD 3-clause license]
+
+The recommended license for source code is '''ISC'''.
+
+===Rationale===
+
+It is important for DCPs to be licensed under the most permissive terms possible
+since they will become technical reference documents that are an intrinsic part
+of Decred.  This is also why code licenses such as the GPL are not acceptable.
+
+While it might be tempting to simply allow DCPs to placed into the public domain
+directly, it is disallowed due to its controversial legal status.  The public
+domain is not universally recognized as a legally sanctioned entity, so some
+argue that "granting" a work into the public domain has no legal effect
+whatsoever.
+
+==Acknowledgements==
+
+This process was heavily influenced by the Bitcoin Improvement Proposal (BIP)
+process although it has been modified to fit the needs of Decred.  The BIP
+process document from which portions of this document are based is licensed
+under the BSD-2-Clause license by author "Luke Dashjr &lt;luke+bip@dashjr.org&gt;".
+
+Thanks to the following individuals who provided valuable feedback during the
+review process of this proposal:
+
+* Jake Yocom-Piatt
+
+==Copyright==
+
+This document is licensed under the
+[https://creativecommons.org/publicdomain/zero/1.0 CC0-1.0: Creative Commons CC0 1.0 Universal]
+license.

@@ -31,4 +31,6 @@ will be updated with more details once it is available.
 !Number!!Title!!Status
 |-
 |[[./dcp-0000/dcp-0000.mediawiki|0000]]||DCP Process||Active
+|-
+|[[./dcp-0001/dcp-0001.mediawiki|0001]]||New Stake Difficulty Algorithm||Defined
 |}

@@ -2,7 +2,7 @@
 DCP: 0001
 Title: New Stake Difficulty Algorithm
 Author: Dave Collins <davec@decred.org>
-Status: Voting
+Status: Active
 Created: 2017-05-04
 License: CC0-1.0
 License-Code: ISC

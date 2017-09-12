@@ -1,0 +1,280 @@
+<pre>
+DCP: 0002
+Title: SHA256 Opcode
+Author: Dave Collins <davec@decred.org>
+Status: Voting
+Created: 2017-09-11
+License: CC0-1.0
+License-Code: ISC
+</pre>
+
+==Abstract==
+
+This specifies a new opcode (SHA256) for the Decred script system that provides
+the ability to replace the top element of the data stack with its computed
+SHA-256 hash.
+
+==Motivation==
+
+In order to support typical cross-chain operations such as atomic swaps, both
+chains involved often need to be able to make use of a shared hashed secret in
+order to ensure that when one counterparty redeems a transaction they are
+required to reveal the secret, which in turn ensures the other counterparty can
+also redeem a separate transaction that requires the same secret.  This implies
+that the hashing algorithm used by both chains must be identical so that both
+counterparties can prove that transactions involved require the same secret
+without actually having to reveal that secret until a later time.  This behavior
+is also known as a hashlock and is a key component of Hash Time-Locked Contracts
+(HTLCs).
+
+===Hash Time-Locked Contracts===
+
+Hash Time-Locked Contracts extend the aforementioned hashlock behavior to
+provide an additional execution path with a timelock mechanism to ensure that
+funds can be redeemed by the initial funding party after a timeout is reached in
+the case the counterparty never reveals the secret.
+
+An example HTLC script follows:
+
+    OP_IF
+      OP_SHA256 <hash of secret> OP_EQUALVERIFY           // Require disclosure of secret to redeem
+      OP_DUP OP_HASH160 <counterparty2 public key hash>   // Require signature from counterparty 2
+    OP_ELSE
+      <locktime> OP_CHECKLOCKTIMEVERIFY OP_DROP           // Prevent redemption until timeout
+      OP_DUP OP_HASH160 <counterparty1 public key hash>   // Require signature from counterparty 1
+    OP_ENDIF
+    OP_EQUALVERIFY OP_CHECKSIG                            // Ensure signature is valid
+
+===Lightning Network===
+
+The Lightning Network (LN) makes extensive use of HTLCs to setup atomic swaps
+between payment channels which in turn is what provides the ability to transact
+trustlessly through intermediate parties.  While there is no need to support the
+proposed <code>SHA256</code opcode for LN to function with normal
+Decred-specific transactions, since all of the LN transactions can simply use
+Blake-256 hashlocks for that purpose, it is useful to be able to interoperate
+with other chains in order to perform "off-chain atomic swaps" which are
+effectively a combination of the concepts of both cross-chain atomic swaps and
+LN payment channels.  In other words, the combination of techniques with
+interoperable hashlocks provides the opportunity for creating instant,
+trustless, decentralized cryptocurrency exchanges.
+
+==Specification==
+
+===Opcode Value===
+
+The new opcode <code>SHA256</code> redefines the existing  opcode
+<code>UNKNOWN192</code>, which has a value of <code>0xc0</code>
+(<code>192</code> decimal).
+
+===Opcode Semantics===
+
+When executed, the script execution must terminate with an error if the stack is
+empty.
+
+Otherwise, the opcode must pop the top item from the stack as a byte array,
+compute its SHA-256, and push the resulting digest back to the stack as a byte
+array.
+
+The following diagram illustrates an example partial Decred script that contains
+the new opcode and successful execution of it along with the associated stack
+transformations:
+
+<img src="op_sha256.png" />
+
+==Rationale==
+
+The SHA-256 algorithm was chosen because it is expected that it will become the
+dominant cross-chain hashing algorithm used for the purposes of providing
+interoperable hashes due to its ubiquitous nature and the fact it is the general
+hashing algorithm used for areas such as proof-of-work and deterministic key
+generation in many other prominent chains.  It also provides 256 bits of
+security as compared to other common potential choices, such as HASH160 (the
+SHA-256 variant) which only provides 160 bits of security.
+
+It is worth noting that the Decred script system currently already provides
+opcodes which perform a similar function as the proposed opcode, such as
+<code>BLAKE256</code>, <code>HASH160</code>, and <code>HASH256</code>, however,
+they involve computing either a Blake-256 hash or some combination of hashing
+algorithms involving Blake-256 as opposed to computing a plain SHA-256 hash.
+The design and semantics of the new proposed opcode were chosen to mirror the
+existing <code>BLAKE256</code> opcode.
+
+==Deployment==
+
+This agenda will be deployed to mainnet using the standard Decred on-chain
+voting infrastructure as follows:
+
+{|
+!Name!!Setting
+|-
+|Deployment Version||5
+|-
+|Agenda ID||lnfeatures
+|-
+|Agenda Description||Enable features defined in DCP0002 and DCP0003 necessary to support Lightning Network (LN)
+|-
+|Start Time||1505260800 (Sep 13th, 2017 00:00:00 +0000 UTC)
+|-
+|Expire Time||1536796800 (Sep 13th, 2018 00:00:00 +0000 UTC)
+|-
+|Mask||0x06 (Bits 1 and 2)
+|-
+|Choices||{|
+!Choice!!English Description!!Bits
+|-
+|abstain||abstain voting for change||0x00
+|-
+|no||keep the existing consensus rules||0x02 (Bit 1)
+|-
+|yes||change to the new consensus rules||0x04 (Bit 2)
+|}
+|}
+
+==Compatibility==
+
+This is a hard-forking change to the Decred consensus.  This means that once
+the agenda is voted in and becomes locked in, anybody running code that fully
+validates blocks must upgrade before the activation time or they will risk
+rejecting a chain containing a transaction which makes use of the new opcode.
+
+Other software will need to upgrade their script system according to the
+specification herein.
+
+==Reference Implementation==
+
+===Opcode Execution===
+
+<pre>
+// opcodeSha256 treats the top item of the data stack as raw bytes and replaces
+// it with sha256(data).
+//
+// Stack transformation: [... x1] -> [... sha256(x1)]
+func opcodeSha256(op *parsedOpcode, vm *Engine) error {
+	// Treat the opcode as OP_UNKNOWN192 if the flag to interpret it as the
+	// SHA256 opcode is not set.
+	if !vm.hasFlag(ScriptVerifySHA256) {
+		if vm.hasFlag(ScriptDiscourageUpgradableNops) {
+			return errors.New("OP_UNKNOWN192 reserved for upgrades")
+		}
+		return nil
+	}
+
+	buf, err := vm.dstack.PopByteArray()
+	if err != nil {
+		return err
+	}
+
+	hash := sha256.Sum256(buf)
+	vm.dstack.PushByteArray(hash[:])
+	return nil
+}
+</pre>
+
+===Pull Requests===
+
+====Script Engine Changes====
+
+A reference implementation of the required script engine changes is provided by
+[[https://github.com/decred/dcrd/pull/851|pull request #851]].
+
+====Deployment====
+
+A reference implementation of the required agenda definition is implemented by
+[[https://github.com/decred/dcrd/pull/848|pull request #848]].
+
+==Test Vectors==
+
+The following test vectors are provided in order to facilitate testing across
+implementations.  These are the expected values for all networks.
+
+===SHA-256 Golden Strings===
+
+{|
+!Input Data!!Expected Hash
+|-
+|"" (empty string)||e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+|-
+|"a" (0x61)||ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb
+|-
+|"ab" (0x6162)||fb8e20fc2e4c3f248c60c39bd652f3c1347298bb977b8b4d5903b85055620603
+|-
+|"abc" (0x616263)||ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+|-
+|"abcd" (0x61626364)||88d4266fd4e6338d13b845fcf289579d209c897823b9217da3e161936f031589
+|-
+|"abcde" (0x6162636465)||36bbe50ed96841d10443bcb670d6554f0a34b761be67ec9c4a8ad2c0c44ca42c
+|-
+|"abcdef" (0x616263646566)||bef57ec7f53a6d40beb640a780a639c83bc29ac8a9816f1fc6c5c6dcd93c4721
+|-
+|"abcdefg" (0x61626364656667)||7d1a54127b222502f5b79b5fb0803061152a44f92b37e23c6527baf665d4da9a
+|-
+|"abcdefgh" (0x6162636465666768)||9c56cc51b374c3ba189210d5b6d4bf57790d351c96c47c02190ecf1e430635ab
+|-
+|"abcdefghi" (0x616263646566676869)||19cc02f26df43cc571bc9ed7b0c4d29224a3ec229529221725ef76d021c8326f
+|-
+|"abcdefghij" (0x6162636465666768696a)||72399361da6a7754fec986dca5b7cbaf1c810a28ded4abaf56b2106d06cb78b0
+|-
+|}
+
+===Script Pairs===
+
+{|
+!Raw Signature Script!!Raw Public Key Script!!Validity
+|-
+|00||c020e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b85587||valid
+|-
+|0161||c020ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb87||valid
+|-
+|1a6162636465666768696a6b6c6d6e6f707172737475767778797a||c02071c480df93d6ae2f1efad1447c66c9525e316218cf51fc8d9ed832f2daf18b7387||valid
+|-
+|00||c0||valid
+|-
+|61||c0||invalid
+|-
+|61||c051||invalid
+|}
+
+Same as above, but with human-readable scripts:
+
+{|
+!Human-readable Signature Script!!Human-readable Public Key Script!!Validity
+|-
+|0||SHA256 0x20 0xe3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 EQUAL||valid
+|-
+|'a'||SHA256 0x20 0xca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb EQUAL||valid
+|-
+|'abcdefghijklmnopqrstuvwxyz'||SHA256 0x20 0x71c480df93d6ae2f1efad1447c66c9525e316218cf51fc8d9ed832f2daf18b73 EQUAL||valid
+|-
+|0||SHA256||valid
+|-
+|NOP||SHA256||invalid
+|-
+|NOP||SHA256 TRUE||invalid
+|}
+
+
+==Acknowledgements==
+
+===Collaborators===
+
+Thanks to the following individuals who provided valuable feedback during the
+review process of this proposal:
+
+* Josh Rickmar ([[https://github.com/jrick|@jrick]])
+* Jonathan Zeppettini
+* Jake Yocom-Piatt
+
+===References===
+
+* [[http://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.180-4.pdf|FIPS 180-4 Secure Hash Standard]]
+* [[https://en.wikipedia.org/wiki/SHA-2|SHA-256 Wikipedia Entry]]
+* [[http://lightning.network/lightning-network-paper.pdf|Lightning Network]]
+
+==Copyright==
+
+This document is licensed under the
+[https://creativecommons.org/publicdomain/zero/1.0 CC0-1.0: Creative Commons CC0 1.0 Universal]
+license.
+
+The code is licensed under the [https://opensource.org/licenses/ISC ISC License].

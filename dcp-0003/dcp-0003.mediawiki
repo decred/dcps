@@ -1,0 +1,835 @@
+<pre>
+DCP: 0003
+Title: Relative Lock Time Support
+Author: Dave Collins <davec@decred.org>
+Status: Voting
+Created: 2017-09-11
+License: CC0-1.0
+License-Code: ISC
+</pre>
+
+==Abstract==
+
+This repurposes the sequence field of transaction inputs to provide
+consensus-enforced relative lock-time semantics, specifies a new opcode
+(<code>CHECKSEQUENCEVERIFY</code>) for the Decred script system that provides
+the ability to conditionally enforce relative time-based restrictions, and
+changes the semantics for transaction time locks to use the median time of the
+previous 11 blocks instead of the timestamp of the block itself in order to
+ensure the lock times increase monotonically with each block.
+
+==Motivation==
+
+There are a large number of use cases that either rely on, or can benefit from,
+the ability to prevent spending outputs until they have reached a certain
+relative age, especially when that ability can be conditionally enforced via the
+script system.  A few examples of these use cases are provided in this proposal,
+but it is important to note that they are merely a small sampling of the
+possible applications.
+
+Currently, the ability to lock outputs until a certain absolute age exists via
+the locktime field of transactions and the <code>CHECKLOCKTIMEVERIFY</code>
+opcode.  In other words, that opcode makes it possible to conditionally enforce
+that an output can't be spent until a specific time and date, or a specific
+absolute block height.
+
+In comparison, this proposal aims to additionally provide consensus-enforced
+''relative'' time locks.  In other words, the ability to allow a transaction
+input to remain invalid until a certain number of blocks or time has passed from
+the point the referenced output is actually mined.
+
+The sequence field of transaction inputs was inherited from Bitcoin where its
+original intent seemed to be to support replacing unmined transactions by
+increasing the sequence number.  Unfortunately, that approach would not work
+well because it relies on miners benevolently choosing the higher value even
+when it would go against their best interests such as preferring a lower
+sequence number that paid a higher fee and therefore it has never been used.
+
+Consequently, this proposal repurposes the sequence field to provide the
+highly desirable relative lock-time properties in a backwards-compatible way
+while still providing some additional bits for future enhancements.
+
+===Hash Time-Locked Contracts with Relative Timeouts===
+
+The basic premise of Hash Time-Locked Contracts (HTLCs) are described in
+[[https://github.com/decred/dcps/blob/master/dcp-0002/dcp-0002.mediawiki|DCP0002]],
+which also provides an example HTLC that relies on absolute lock times by making
+use of the <code>CHECKLOCKTIMEVERIFY</code> opcode.  With the new
+<code>CHECKSEQUENCEVERIFY</code> opcode in this proposal, it is possible to
+modify the example contract slightly such that the timeout is relative to the
+time the contract is actually mined into the chain as follows:
+
+    OP_IF
+      OP_SHA256 <hash of secret> OP_EQUALVERIFY           // Require disclosure of secret to redeem
+      OP_DUP OP_HASH160 <counterparty2 public key hash>   // Require signature from counterparty 2
+    OP_ELSE
+      <locktime> OP_CHECKSEQUENCEVERIFY OP_DROP           // Prevent redemption until specified relative timeout after funding
+      OP_DUP OP_HASH160 <counterparty1 public key hash>   // Require signature from counterparty 1
+    OP_ENDIF
+    OP_EQUALVERIFY OP_CHECKSIG                            // Ensure signature is valid
+
+This is useful because it allows these contracts to be negotiated off-chain
+without imposing an absolute deadline by which they have to be recreated with a
+timeout further in the future.  This is the case because, due to the relative
+timeout, the clock does not start ticking until the transaction is actually
+mined into the chain.
+
+===Bidirectional Payment Channels===
+
+A fundamental requirement of the Lightning Network (LN) is what is known as a
+bidirectional payment channel.  In essence, a bidirectional payment channel is a
+series of off-chain transactions that are constructed in a way that allows them
+to take advantage of the security of normal on-chain transactions while
+simultaneously providing several additional benefits.
+
+At a high level, this is accomplished by creating an on-chain anchor transaction
+that requires signatures from both counterparties to redeem and a series of
+time-locked revocable commitment transactions that spend from that anchor
+transaction.  Each party initially creates a commitment transaction that refunds
+their respective individual amounts they used to fund the contract, however,
+they do not broadcast them to the network.  Instead, as they conduct business,
+they create new commitment transactions which alter how the funds are split
+between them.  Since the anchor transaction can only be spent once, and due to
+the restrictions enforced by the underlying smart contract, only the most recent
+commitment transaction is valid.  Consequently, the payment channel can be
+trustlessly closed at any time by either party by simply broadcasting the
+most recent commitment transaction to the network for inclusion in the
+blockchain.
+
+Since the commitment transactions are time locked, using absolute times would
+effectively place a lifetime on the channel.  This is the case because it
+would be necessary to close and reopen the channel any time the absolute timeout
+was approaching in order to prevent the counterparty from being able to steal
+funds.  This also implies that it would be necessary to use fairly long timeouts
+with absolute time locks in order to limit the frequency of closing and
+reopening channels.  Long timeouts are not desirable because it increases the
+time it takes to recover funds from the channel in the event of an uncooperative
+counterparty.
+
+These problems can all be avoided by using relative time locks.
+
+===Lightning Network===
+
+The Lightning Network further builds on the concept of bidirectional payment
+channels to create a network of them over which payments can be trustlessly
+routed by finding a path similar to the way packets are routed through the
+internet.  In order to do this, it essentially makes use of HTLCs with
+decrementing time locks.
+
+===Off-chain Atomic Swaps===
+
+Combining the concepts of bidirectional payment channels, routing over multiple
+hops, and techniques to perform cross-chain atomic swaps, such as those
+described in [[https://github.com/decred/dcps/blob/master/dcp-0002/dcp-0002.mediawiki|DCP0002]],
+it is possible to instantly and trustlessly exchange funds between chains with
+heterogeneous consensus rules so long as both chains support a shared
+cryptographic hash function, such as SHA-256.
+
+In short, off-chain atomic swaps provide the opportunity to create instant,
+trustless, decentralized cryptocurrency exchanges.
+
+===Escrow with Timeout===
+
+A common technique when making payments for products or services via an escrow
+is to create a 2-of-3 multisig transaction between the buyer, seller, and a
+third-party escrow agent.  In this type of setup, the escrow agent acts as an
+arbiter in the event the transaction does not go smoothly, but is not able to
+unilaterally steal the funds.
+
+The addition of the proposed <code>CHECKSEQUENCEVERIFY</code> opcode allows an
+additional relative time constraint to be added such that the original funding
+party can redeem the funds after a timeout without needing to get the escrow
+agent or seller involved.  The timeout does not start ticking until the contract
+is actually funded.
+
+An example contract which accomplishes this follows:
+
+    OP_IF
+      OP_2                                        // Require 2 signatures...
+      <buyer public key>
+      <seller public key>
+      <escrow public key>
+      OP_3                                        // ...from the 3 pubkeys
+      OP_CHECKMULTISIG                            // Ensure required number of signatures are valid
+    OP_ELSE
+      <locktime> OP_CHECKSEQUENCEVERIFY OP_DROP   // Prevent redemption until specified relative timeout after funding
+      <buyer public key> OP_CHECKSIG              // Require signature from buyer
+    OP_ENDIF
+
+==Specification==
+
+===Transaction Lock Times Based On Past Median Time===
+
+All calculations involving transaction lock times MUST be compared against the
+timestamp of the median time of the previous 11 blocks.  This value is also
+often called the past median time and is already used in various places in the
+consensus code.
+
+This requirement includes changing the semantics of the existing lock time field
+and also applies to the newly repurposed relative lock-time sequence numbers
+described in this proposal.
+
+===Relative Lock-time Sequence Numbers===
+
+Transactions with a version greater than or equal to 2, except for coinbase and
+stakebase transactions, are required to interpret the sequence number of their
+inputs per the following diagram and detailed specification:
+
+<img src="sequence_num.svg" width="100%" height="75" />
+
+{|
+!Bits!!Description
+|-
+|0-15|||Relative lock time.  This value is interpreted differently depending
+on the type flag.  A mask of 0x0000ffff MUST be applied to the sequence number
+to extract this value.
+|-
+|16-21||Reserved for potential future use
+|-
+|22|||Relative lock type.  When set, the value portion MUST be interpreted as
+the relative number of blocks required.  When ''not'' set, the value portion
+MUST be interpreted as the number of 512-second intervals required.
+|-
+|23-30||Reserved for potential future use
+|-
+|31||Disable flag.  When set, the sequence number MUST not have any new
+consensus-enforced meaning, as described in this proposal, applied to it.
+|}
+
+Time-based constraints MUST be encoded with a granularity of 512.  Since 512
+is 2^9, this implies converting the number of seconds to and from the value
+portion of a sequence number can be accomplished by shifting the value right or
+left 9 bits, respectively.
+
+Relative locks MUST provide a minimum constraint on the age of the input
+relative to the referenced output.  The constraint is either a block-time
+constraint in terms of seconds or a block-height constraint in terms of number
+of blocks depending on the type of the relative lock as determined by bit 22 of
+the sequence number.  Since the sequence number is a 32-bit value, this implies
+a mask of <code>0x00400000</code> may be be used in conjunction with the binary
+AND and binary OR operations to determine or set the relative lock type,
+respectively.
+
+The age of an input MUST be calculated relative to the output that is being
+spent.  For time-based relative locks, the age is relative to the past median
+time of the block prior to the one that contains the output, while, for
+block-based relative locks, the age is relative to the height of the block that
+contains the output.
+
+The previous two rules imply that a relative lock time of 0 (in terms of both
+seconds and number of blocks) indicates an input can be included in any block
+and any other values prevent an input from being included before the required
+age has been reached.
+
+It should also be noted that bit 22, the relative lock type flag, is the high
+order bit in a 3-byte signed integer as encoded when pushed as data in the
+Decred scripting language for use with the proposed
+<code>CHECKSEQUENCEVERIFY</code> opcode.
+
+===CHECKSEQUENCEVERIFY Opcode Value===
+
+The new opcode <code>CHECKSEQUENCEVERIFY</code> redefines the existing opcode
+<code>NOP3</code>, which has a value of <code>0xb2</code> (<code>178</code>
+decimal).
+
+===CHECKSEQUENCEVERIFY Opcode Semantics===
+
+When executed, the script execution MUST terminate with an error under the
+following conditions:
+
+* The stack is empty; or
+* The top stack item is encoded with more than 5 bytes; or
+* The top stack item is less than 0; or
+* The top stack item does not have the disable flag set; and
+** The transaction version is less than 2; or
+** The transaction sequence number has the disable flag set; or
+** The transaction sequence number and top stack item relative lock-time types are not the same; or
+** The top stack item is greater than the converted transaction sequence number
+
+Otherwise, the opcode MUST be treated as a NOP.
+
+
+The following diagram illustrates these semantics:
+
+<img src="op_csv.svg" width="100%" height="650" />
+
+This opcode, in conjunction with the newly introduced requirements imposed on
+sequence numbers in the relative lock-time sequence numbers section, provides a
+mechanism to conditionally ensure that a minimum age has been reached before a
+transaction can be included in a block.
+
+==Rationale==
+
+The format of the sequence numbers and semantics of the opcode were chosen
+because they mirror those used in other prominent chains and therefore provide a
+much easier path to allowing interoperability with other chains.
+
+This is especially pertinent since the ability to trustlessly interoperate helps
+pave the way for techniques such as off-chain atomic swaps and a whole host of
+other use cases which can make use of these primitives.
+
+==Deployment==
+
+This agenda will be deployed to mainnet using the standard Decred on-chain
+voting infrastructure as follows:
+
+{|
+!Name!!Setting
+|-
+|Deployment Version||5
+|-
+|Agenda ID||lnfeatures
+|-
+|Agenda Description||Enable features defined in DCP0002 and DCP0003 necessary to support Lightning Network (LN)
+|-
+|Start Time||1505260800 (Sep 13th, 2017 00:00:00 +0000 UTC)
+|-
+|Expire Time||1536796800 (Sep 13th, 2018 00:00:00 +0000 UTC)
+|-
+|Mask||0x06 (Bits 1 and 2)
+|-
+|Choices||{|
+!Choice!!English Description!!Bits
+|-
+|abstain||abstain voting for change||0x00
+|-
+|no||keep the existing consensus rules||0x02 (Bit 1)
+|-
+|yes||change to the new consensus rules||0x04 (Bit 2)
+|}
+|}
+
+==Compatibility==
+
+This is a soft-forking change to the Decred consensus, so old nodes that have
+not been upgraded will continue to follow the chain with the most proof-of-work.
+
+However, it is highly recommended that all nodes upgrade before the activation
+time so they also fully validate and enforce the new rules versus relying on
+upgraded nodes to do so for them.
+
+The only use of sequence numbers currently is to disable checking the lock time
+constraints and that behavior is not changed by this proposal.
+
+Other software that performs full validation will need to upgrade their script
+system and consensus enforcement rules according to the specification herein.
+
+==Reference Implementation==
+
+===Sequence Lock Consensus Enforcement===
+
+<pre>
+const (
+	// SequenceLockTimeDisabled is a flag that if set on a transaction
+	// input's sequence number, the sequence number will not be interpreted
+	// as a relative locktime.
+	SequenceLockTimeDisabled = 1 << 31
+
+	// SequenceLockTimeIsSeconds is a flag that if set on a transaction
+	// input's sequence number, the relative locktime has units of 512
+	// seconds.
+	SequenceLockTimeIsSeconds = 1 << 22
+
+	// SequenceLockTimeMask is a mask that extracts the relative locktime
+	// when masked against the transaction input sequence number.
+	SequenceLockTimeMask = 0x0000ffff
+
+	// SequenceLockTimeGranularity is the defined time based granularity
+	// for seconds-based relative time locks.  When converting from seconds
+	// to a sequence number, the value is right shifted by this amount,
+	// therefore the granularity of relative time locks in 512 or 2^9
+	// seconds.  Enforced relative lock times are multiples of 512 seconds.
+	SequenceLockTimeGranularity = 9
+)
+
+
+// SequenceLock represents the minimum timestamp and minimum block height after
+// which a transaction can be included into a block while satisfying the
+// relative lock times of all of its input sequence numbers.  It is calculated
+// via the CalcSequenceLock function.  Each field may be -1 if none of the input
+// sequence numbers require a specific relative lock time for the respective
+// type.  Since all valid heights and times are larger than -1, this implies
+// that it will not prevent a transaction from being included due to the
+// sequence lock, which is the desired behavior.
+type SequenceLock struct {
+	MinHeight int64
+	MinTime   int64
+}
+
+// calcSequenceLock computes the relative lock times for the passed transaction
+// from the point of view of the block node passed in as the first argument.
+//
+// See the CalcSequenceLock comments for more details.
+//
+// This function MUST be called with the chain state lock held (for writes).
+func (b *BlockChain) calcSequenceLock(node *blockNode, tx *dcrutil.Tx, view *UtxoViewpoint, isActive bool) (*SequenceLock, error) {
+	// A value of -1 for each lock type allows a transaction to be included
+	// in a block at any given height or time.
+	sequenceLock := &SequenceLock{MinHeight: -1, MinTime: -1}
+
+	// Sequence locks do not apply if they are not yet active, the tx
+	// version is less than 2, or the tx is a coinbase or stakebase, so
+	// return now with a sequence lock that indicates the tx can possibly be
+	// included in a block at any given height or time.
+	msgTx := tx.MsgTx()
+	enforce := isActive && msgTx.Version >= 2
+	if !enforce || IsCoinBaseTx(msgTx) || isStakeBaseTx(msgTx) {
+		return sequenceLock, nil
+
+	}
+
+	for txInIndex, txIn := range msgTx.TxIn {
+		// Nothing to calculate for this input when relative time locks
+		// are disabled for it.
+		sequenceNum := txIn.Sequence
+		if sequenceNum&SequenceLockTimeDisabled != 0 {
+			continue
+		}
+
+		utxo := view.LookupEntry(&txIn.PreviousOutPoint.Hash)
+		if utxo == nil {
+			str := fmt.Sprintf("unable to find unspent output "+
+				"%v referenced from transaction %s:%d",
+				txIn.PreviousOutPoint, tx.Hash(), txInIndex)
+			return sequenceLock, ruleError(ErrMissingTx, str)
+		}
+
+		// Calculate the sequence locks from the point of view of the
+		// next block for inputs that are in the mempool.
+		inputHeight := utxo.BlockHeight()
+		if inputHeight == 0x7fffffff {
+			inputHeight = node.height + 1
+		}
+
+		// Mask off the value portion of the sequence number to obtain
+		// the time lock delta required before this this input can be
+		// spent.  The relative lock can be time based or block based.
+		relativeLock := int64(sequenceNum & SequenceLockTimeMask)
+
+		if sequenceNum&SequenceLockTimeIsSeconds != 0 {
+			// This input requires a time based relative lock
+			// expressed in seconds before it can be spent and time
+			// based locks are calculated relative to the earliest
+			// possible time the block that contains the referenced
+			// output could have been.  That time is the past
+			// median time of the block before it (technically one
+			// second after that, but that complexity is ignored for
+			// time based locks which already have a granularity
+			// associated with them anyways).  Therefore, the block
+			// prior to the one in which the referenced output was
+			// included is needed to compute its past median time.
+			prevInputHeight := inputHeight - 1
+			if prevInputHeight < 0 {
+				prevInputHeight = 0
+			}
+			blockNode, err := b.ancestorNode(node, prevInputHeight)
+			if err != nil {
+				return sequenceLock, err
+			}
+
+			// Calculate the past median time of the block prior to
+			// the one which included the output being spent.
+			medianTime, err := b.calcPastMedianTime(blockNode)
+			if err != nil {
+				return sequenceLock, err
+			}
+
+			// Calculate the minimum required timestamp based on the
+			// sum of the aforementioned past median time and
+			// required relative number of seconds.  Since time
+			// based relative locks have a granularity associated
+			// with them, shift left accordingly in order to convert
+			// to the proper number of relative seconds.  Also,
+			// subtract one from the relative lock to maintain the
+			// original lock time semantics.
+			relativeSecs := relativeLock << SequenceLockTimeGranularity
+			minTime := medianTime.Unix() + relativeSecs - 1
+			if minTime > sequenceLock.MinTime {
+				sequenceLock.MinTime = minTime
+			}
+		} else {
+			// This input requires a relative lock expressed in
+			// blocks before it can be spent.  Therefore, calculate
+			// the minimum required height based on the sum of the
+			// input height and required relative number of blocks.
+			// Also, subtract one from the relative lock in order to
+			// maintain the original lock time semantics.
+			minHeight := inputHeight + int64(relativeLock) - 1
+			if minHeight > sequenceLock.MinHeight {
+				sequenceLock.MinHeight = minHeight
+			}
+		}
+	}
+
+	return sequenceLock, nil
+}
+</pre>
+
+===Sequence Number Conversion===
+
+<pre>
+// LockTimeToSequence converts the passed relative lock time to a sequence
+// number in accordance with DCP0003.
+//
+// A sequence number is defined as follows:
+//
+//   - bit 31 is the disable bit
+//   - the next 8 bits are reserved
+//   - bit 22 is the relative lock type (unset = block height, set = seconds)
+//   - the next 6 bites are reserved
+//   - the least significant 16 bits represent the value
+//     - value has a granularity of 512 when interpreted as seconds (bit 22 set)
+//
+//   ---------------------------------------------------
+//   | Disable | Reserved |  Type | Reserved |  Value  |
+//   ---------------------------------------------------
+//   |  1 bit  |  8 bits  | 1 bit |  6 bits  | 16 bits |
+//   ---------------------------------------------------
+//   |   [31]  |  [30-23] |  [22] |  [21-16] | [15-0]  |
+//   ---------------------------------------------------
+//
+// The above implies that the maximum relative block height that can be encoded
+// is 65535 and the maximum relative number of seconds that can be encoded is
+// 65535*512 = 33,553,920 seconds (~1.06 years).  It also means that seconds are
+// truncated to the nearest granularity towards 0 (e.g. 536 seconds will end up
+// round tripping as 512 seconds and 1500 seconds will end up round tripping as
+// 1024 seconds).
+//
+// An error will be returned for values that are larger than can be represented.
+func LockTimeToSequence(isSeconds bool, lockTime uint32) (uint32, error) {
+	// The corresponding sequence number is simply the desired input age
+	// when expressing the relative lock time in blocks.
+	if !isSeconds {
+		if lockTime > SequenceLockTimeMask {
+			return 0, fmt.Errorf("max relative block height a "+
+				"sequence number can represent is %d",
+				SequenceLockTimeMask)
+		}
+		return lockTime, nil
+	}
+
+	maxSeconds := uint32(SequenceLockTimeMask << SequenceLockTimeGranularity)
+	if lockTime > maxSeconds {
+		return 0, fmt.Errorf("max relative seconds a sequence number "+
+			"can represent is %d", maxSeconds)
+	}
+
+	// Set bit 22 which indicates the lock time is in seconds, then shift the
+	// lock time over by 9 since the time granularity is in 512-second
+	// intervals (2^9).  This results in a max lock time of 33,553,920 seconds
+	// (~1.06 years).
+	return SequenceLockTimeIsSeconds |
+	    lockTime>>SequenceLockTimeGranularity, nil
+}
+</pre>
+
+===Opcode Execution===
+
+<pre>
+// verifyLockTime is a helper function used to validate locktimes.
+func verifyLockTime(txLockTime, threshold, lockTime int64) error {
+	// The lockTimes in both the script and transaction must be of the same
+	// type.
+	if !((txLockTime < threshold && lockTime < threshold) ||
+		(txLockTime >= threshold && lockTime >= threshold)) {
+
+		return fmt.Errorf("mismatched locktime types -- tx locktime %d, stack "+
+			"locktime %d", txLockTime, lockTime)
+	}
+
+	if lockTime > txLockTime {
+		str := "locktime requirement not satisfied -- locktime is greater " +
+			"than the transaction locktime: %d > %d"
+		return fmt.Errorf(str, lockTime, txLockTime)
+	}
+
+	return nil
+}
+
+// opcodeCheckSequenceVerify compares the top item on the data stack to the
+// Sequence field of the transaction containing the script signature
+// validating if the transaction outputs are spendable yet.
+func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
+	// Treat the opcode as OP_NOP3 if the flag to interpret it as the
+	// CHECKSEQUENCEVERIFY opcode is not set.
+	if !vm.hasFlag(ScriptVerifyCheckSequenceVerify) {
+		if vm.hasFlag(ScriptDiscourageUpgradableNops) {
+			return errors.New("OP_NOP3 reserved for soft-fork upgrades")
+		}
+		return nil
+	}
+
+	// The current transaction sequence is a uint32 resulting in a maximum
+	// sequence of 2^32-1.  However, scriptNums are signed and therefore a
+	// standard 4-byte scriptNum would only support up to a maximum of
+	// 2^31-1.  Thus, a 5-byte scriptNum is used here since it will support
+	// up to 2^39-1 which allows sequences beyond the current sequence
+	// limit.
+	//
+	// PeekByteArray is used here instead of PeekInt because we do not want
+	// to be limited to a 4-byte integer for reasons specified above.
+	so, err := vm.dstack.PeekByteArray(0)
+	if err != nil {
+		return err
+	}
+	stackSequence, err := makeScriptNum(so, vm.dstack.verifyMinimalData, 5)
+	if err != nil {
+		return err
+	}
+
+	// In the rare event that the argument needs to be < 0 due to some
+	// arithmetic being done first, you can always use
+	// 0 OP_MAX OP_CHECKSEQUENCEVERIFY.
+	if stackSequence < 0 {
+		return fmt.Errorf("negative sequence: %d", stackSequence)
+	}
+
+	sequence := int64(stackSequence)
+
+	// To provide for future soft-fork extensibility, if the
+	// operand has the disabled lock-time flag set,
+	// CHECKSEQUENCEVERIFY behaves as a NOP.
+	if sequence&int64(SequenceLockTimeDisabled) != 0 {
+		return nil
+	}
+
+	// Transaction version numbers not high enough to trigger CSV rules must
+	// fail.
+	if vm.tx.Version < 2 {
+		return fmt.Errorf("invalid transaction version: %d",
+			vm.tx.Version)
+	}
+
+	// Sequence numbers with their most significant bit set are not
+	// consensus constrained. Testing that the transaction's sequence
+	// number does not have this bit set prevents using this property
+	// to get around a CHECKSEQUENCEVERIFY check.
+	txSequence := int64(vm.tx.TxIn[vm.txIdx].Sequence)
+	if txSequence&int64(SequenceLockTimeDisabled) != 0 {
+		return fmt.Errorf("transaction sequence has sequence "+
+			"locktime disabled bit set: 0x%x", txSequence)
+	}
+
+	// Mask off non-consensus bits before doing comparisons.
+	lockTimeMask := int64(SequenceLockTimeIsSeconds | SequenceLockTimeMask)
+	err = verifyLockTime(txSequence&lockTimeMask, SequenceLockTimeIsSeconds,
+		sequence&lockTimeMask)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+</pre>
+
+===Pull Requests===
+
+====Relative Lock-time Sequence Number Enforcement====
+
+A reference implementation of the required consensus changes to enforce the
+sequence field abides by the relative lock-time semantics and the required
+script engine changes is provided by
+[[https://github.com/decred/dcrd/pull/864|pull request #864]].
+
+====Deployment====
+
+A reference implementation of the required agenda definition is implemented by
+[[https://github.com/decred/dcrd/pull/848|pull request #848]].
+
+A reference implementation of enforcing the new opcode and semantics in
+accordance with the results of the agenda vote is implemented by
+[[https://github.com/decred/dcrd/pull/855|pull request #855]].
+
+==Test Vectors==
+
+The following test vectors are provided in order to facilitate testing across
+implementations.  These are the expected values for all networks.
+
+===Sequence Number Conversion===
+
+{|
+!Validity!!Input Value!!Height or Seconds!!Expected Sequence Number!!Description
+|-
+|valid||0||height||0||relative block height 0
+|-
+|valid||65535||height||65535||max relative block height
+|-
+|invalid||65536||height||invalid||max relative block height + 1
+|-
+|valid||0||seconds||4194304||relative seconds 0
+|-
+|valid||511||seconds||4194304||relative seconds granularity - 1
+|-
+|valid||512||seconds||4194305||relative seconds exact granularity
+|-
+|valid||513||seconds||4194305||relative seconds granularity + 1
+|-
+|valid||33553919||seconds||4259838||relative seconds max - 1
+|-
+|valid||33553920||seconds||4259839||relative seconds max
+|-
+|invalid||33553921||seconds||invalid||relative seconds max + 1
+|}
+
+===Sequence Lock Calculation===
+
+NOTE: The tests in this section all assume the block the referenced inputs are
+contained in has a median time of <code>1401292367</code> and a height of
+<code>16</code>.
+
+{|
+!Tx Version!!Input Sequence Numbers!!Expected Min Height!!Expected Min Time!!Description
+|-
+|1||3|| -1|| -1||Sequence locks do not apply to version 1 transactions
+|-
+|2||4294967295|| -1|| -1||Max sequence number has disabled bit set
+|-
+|2||4194304|| -1||1401292366||Single input that requires seconds below granularity
+|-
+|2||4194306|| -1||1401293390||Single input that requires 1024 seconds
+|-
+|2||4194309, 4, 2147483653||19||1401294926||Multiple inputs with one disabled
+|-
+|2||3||18|| -1||Single input that requires 3 blocks
+|-
+|2||4194314, 4194309|| -1||1401297486||Two inputs that both require seconds
+|-
+|2||1, 11||26|| -1||Two inputs that both require blocks
+|-
+|2||4194309, 4194317, 3, 9||24||1401299022||Four inputs with two that require seconds and two that require blocks
+|}
+
+===Script Evaluation===
+
+{|
+!Validity!!Tx Version!!Sequence Number!!Signature Script!!Public Key Script!!Description
+|-
+|valid||2||0||empty||00b251||By-height lock with equal argument and sequence (argument == 0)
+|-
+|valid||2||65535||empty||03ffff00b251||By-height lock with equal argument and sequence (argument == 65535)
+|-
+|valid||2||2143289343||empty||03ffff00b251||By-height lock with equal argument and masked max sequence (argument == 65535)
+|-
+|valid||2||2143289343||empty||00b251||By-height lock with argument < masked max sequence (argument == 0)
+|-
+|valid||2||4194304||empty||03000040b251||By-time lock with equal argument and sequence (argument == 4194304)
+|-
+|valid||2||4259839||empty||03ffff40b251||By-time lock with equal argument and sequence (argument == 4259839)
+|-
+|valid||2||2147483647||empty||03ffff40b251||By-time lock with min argument < sequence (argument == 4259839)
+|-
+|valid||2||2147483647||empty||03000040b251||By-time lock with max argument < sequence (argument == 4194304)
+|-
+|valid||2||2147483648||empty||050000008000b251||Disabled by-height lock with equal argument and sequence (argument == 2147483648)
+|-
+|valid||2||2147483648||empty||05ffffffff00b251||Disabled mismatched lock types with by-time argument and by-height sequence (argument == 4294967295)
+|-
+|valid||2||4294967294||empty||050000008000b251||Disabled mismatched lock types with by-height argument and by-time sequence < max (argument == 2147483648)
+|-
+|valid||2||4294967294||empty||05ffffffff00b251||Disabled by-time lock with argument > sequence (argument == 4294967295)
+|-
+|valid||2||4294967295||empty||050000008000b251||Disabled mismatched lock types with by-height argument and by-time sequence (argument == 2147483648)
+|-
+|valid||2||4294967295||empty||05ffffffff00b251||Disabled by-time lock with equal argument and sequence (argument == 4294967295)
+|-
+|valid||2||2143289343||empty||050000008000b251||Disabled by-height argument for enabled by-height sequence with argument > sequence (argument == 2147483648)
+|-
+|valid||2||2147483647||empty||050000008000b251||Disabled by-height argument for enabled by-time sequence with argument > sequence (argument == 2147483648)
+|-
+|valid||2||4294967295||empty||050000008000b251||Disabled by-height argument for disabled by-time sequence with argument < sequence (argument == 2147483648)
+|-
+|valid||2||2143289343||empty||05ffffffff00b251||Disabled by-time argument for enabled by-height sequence with argument > sequence (argument == 4294967295)
+|-
+|valid||2||2147483647||empty||05ffffffff00b251||Disabled by-time argument for enabled by-time sequence with argument > sequence (argument == 4294967295)
+|-
+|valid||2||4294967295||empty||05ffffffff00b251||Disabled by-time argument for disabled by-time sequence with equal argument and sequence (argument == 4294967295)
+|-
+|valid||2||2143289343||empty||050000008001b251||Disabled >32-bit argument for enabled by-height sequence (argument == 6442450944)
+|-
+|valid||2||2147483647||empty||050000008001b251||Disabled >32-bit argument for enabled by-time sequence (argument == 6442450944)
+|-
+|valid||2||4294967295||empty||050000008001b251||Disabled >32-bit argument for disabled sequence (argument == 6442450944)
+|-
+|valid||2||0||empty||050000000000b251||5-byte non-minimally-encoded operands are valid (argument == non-minimally-encoded 0)
+|-
+|valid||2||4194304||empty||03ffff3f8bb251||By-time lock with calculated argument equal to sequence (argument == 4194303 + 1)
+|-
+|valid||2||65535||empty||030000408cb251||By-height lock with masked calculated argument equal to sequence (argument == 4194304 - 1)
+|-
+|valid||2||0||empty||04ffffff7f0300000193b251||By-height lock with 5-byte calculated argument that sets disable bit (argument == 2147483647 + 65536)
+|-
+|valid||2||4194304||empty||04ffffff7f0300004193b251||By-time lock with 5-byte calculated argument that sets disable bit (argument == 2147483647 + 4259840)
+|-
+|valid||2||1||51b2||51||Valid in signature script (argument == 1)
+|-
+|invalid||2||0||empty||51b251||By-height lock with argument > min sequence (argument == 1)
+|-
+|invalid||2||65534||empty||03ffff00b251||By-time lock with argument > max sequence - 1 (argument == 65535)
+|-
+|invalid||2||4194304||empty||03010040b251||By-time lock with argument > min sequence (argument == 4194305)
+|-
+|invalid||2||4259838||empty||03ffff40b251||By-time lock with argument > max sequence - 1 (argument == 4259839)
+|-
+|invalid||2||0||empty||b251||Missing argument
+|-
+|invalid||2||0||empty||4fb251||By-height sequence with negative argument (argument == -1)
+|-
+|invalid||2||4194304||empty||4fb251||By-time sequence with negative argument (argument == -1)
+|-
+|invalid||2||4194304||empty||00b251||Mismatched lock types with min by-height argument and by-time sequence (argument == 0)
+|-
+|invalid||2||4194304||empty||03ffff00b251||Mismatched lock types with max by-height argument and by-time sequence (argument == 65535)
+|-
+|invalid||2||0||empty||03000040b251||Mismatched lock types with min by-time argument and by-height sequence (argument == 4194304)
+|-
+|invalid||2||0||empty||03ffff40b251||Mismatched lock types with max by-time argument and by-height sequence (argument == 4259839)
+|-
+|invalid||2||65535||empty||06000000000000b251||6-byte non-minimally-encoded argument (argument == non-minimally-encoded 0)
+|-
+|invalid||2||0||51b2||51||Failure in signature script (argument == 1)
+|-
+|invalid||1||0||empty||00b251||Valid by-height lock, but version 1 transaction (argument == 0)
+|-
+|invalid||1||4194304||empty||03000040b251||Valid by-time lock, but version 1 transaction (argument == 4194304)
+|}
+
+==Acknowledgements==
+
+===Source BIPs===
+
+This proposal is based on [[https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki|BIP68]],
+[[https://github.com/bitcoin/bips/blob/master/bip-0112.mediawiki|BIP112]], and
+[[https://github.com/bitcoin/bips/blob/master/bip-0113.mediawiki|BIP113]].  A
+special thanks goes to their authors (alphabetical order):
+
+* BtcDrak
+* Eric Lombrozo
+* Kinoshitajona
+* Mark Friedenbach
+* Nicolas Dorier
+* Thomas Kerin
+
+===Collaborators===
+
+Thanks to the following individuals who provided valuable feedback during the
+review process of this proposal (alphabetical order):
+
+* David Hill ([[https://github.com/dajohi|@dajohi]])
+* Jake Yocom-Piatt
+* Jonathan Chappelow ([[https://github.com/chappjc|@chappjc]])
+* Jonathan Zeppettini
+* Josh Rickmar ([[https://github.com/jrick|@jrick]])
+* [[https://github.com/kandiru|@kandiru]]
+* Marco Peereboom ([[https://github.com/marcopeereboom|@marcopeereboom]])
+
+===Additional References===
+
+* [[http://lightning.network/lightning-network-paper.pdf|Lightning Network]]
+
+==Copyright==
+
+This document is licensed under the
+[https://creativecommons.org/publicdomain/zero/1.0 CC0-1.0: Creative Commons CC0 1.0 Universal]
+license.
+
+The code is licensed under the [https://opensource.org/licenses/ISC ISC License].

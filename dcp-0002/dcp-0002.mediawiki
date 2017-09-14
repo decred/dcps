@@ -62,7 +62,7 @@ trustless, decentralized cryptocurrency exchanges.
 
 ===Opcode Value===
 
-The new opcode <code>SHA256</code> redefines the existing  opcode
+The new opcode <code>SHA256</code> redefines the existing opcode
 <code>UNKNOWN192</code>, which has a value of <code>0xc0</code>
 (<code>192</code> decimal).
 

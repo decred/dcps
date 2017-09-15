@@ -17,15 +17,14 @@ SHA-256 hash.
 ==Motivation==
 
 In order to support typical cross-chain operations such as atomic swaps, both
-chains involved often need to be able to make use of a shared hashed secret in
-order to ensure that when one counterparty redeems a transaction they are
-required to reveal the secret, which in turn ensures the other counterparty can
-also redeem a separate transaction that requires the same secret.  This implies
-that the hashing algorithm used by both chains must be identical so that both
-counterparties can prove that transactions involved require the same secret
-without actually having to reveal that secret until a later time.  This behavior
-is also known as a hashlock and is a key component of Hash Time-Locked Contracts
-(HTLCs).
+chains involved often need to commit to the same secret in order to ensure that
+when one counterparty redeems a transaction they are required to reveal the
+secret, which in turn ensures the other counterparty can also redeem a separate
+transaction that requires the same secret.  This implies that the hashing
+algorithm used by both chains must be identical so that both counterparties can
+prove that transactions involved require the same secret without actually having
+to reveal that secret until a later time.  This behavior is also known as a
+hashlock and is a key component of Hash Time-Locked Contracts (HTLCs).
 
 ===Hash Time-Locked Contracts===
 
@@ -50,7 +49,7 @@ An example HTLC script follows:
 The Lightning Network (LN) makes extensive use of HTLCs to setup atomic swaps
 between payment channels which in turn is what provides the ability to transact
 trustlessly through intermediate parties.  While there is no need to support the
-proposed <code>SHA256</code opcode for LN to function with normal
+proposed <code>SHA256</code> opcode for LN to function with normal
 Decred-specific transactions, since all of the LN transactions can simply use
 Blake-256 hashlocks for that purpose, it is useful to be able to interoperate
 with other chains in order to perform "off-chain atomic swaps" which are
@@ -88,9 +87,9 @@ The SHA-256 algorithm was chosen because it is expected that it will become the
 dominant cross-chain hashing algorithm used for the purposes of providing
 interoperable hashes due to its ubiquitous nature and the fact it is the general
 hashing algorithm used for areas such as proof-of-work and deterministic key
-generation in many other prominent chains.  It also provides 256 bits of
+generation in many other prominent chains.  It also provides 128 bits of
 security as compared to other common potential choices, such as HASH160 (the
-SHA-256 variant) which only provides 160 bits of security.
+SHA-256 variant) which only provides 80 bits of security.
 
 It is worth noting that the Decred script system currently already provides
 opcodes which perform a similar function as the proposed opcode, such as
@@ -259,11 +258,12 @@ Same as above, but with human-readable scripts:
 ===Collaborators===
 
 Thanks to the following individuals who provided valuable feedback during the
-review process of this proposal:
+review process of this proposal (alphabetical order):
 
-* Josh Rickmar ([[https://github.com/jrick|@jrick]])
-* Jonathan Zeppettini
 * Jake Yocom-Piatt
+* Jonathan Zeppettini
+* Josh Rickmar ([[https://github.com/jrick|@jrick]])
+* _miw ([[https://github.com/MiWCryptoCurrency|@MiWCryptoCurrency]])
 
 ===References===
 

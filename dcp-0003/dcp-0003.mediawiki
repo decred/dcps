@@ -2,7 +2,7 @@
 DCP: 0003
 Title: Relative Lock Time Support
 Author: Dave Collins <davec@decred.org>
-Status: Voting
+Status: Active
 Created: 2017-09-11
 License: CC0-1.0
 License-Code: ISC

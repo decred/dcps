@@ -1,0 +1,178 @@
+<pre>
+DCP: 0004
+Title: Fix LN Sequence Locks View
+Author: Dave Collins <davec@decred.org>
+Status: Voting
+Created: 2019-01-28
+License: CC0-1.0
+License-Code: ISC
+Requires: DCP0003
+</pre>
+
+==Abstract==
+
+This proposes required corrections to the view that is used to enforce relative
+time locks in order to provide full support for the Lightning Network and a wide
+variety of other use cases.
+
+==Motivation==
+
+The current view used for determining consensus-enforced relative lock-time
+semantics in version 2 transactions is more restrictive than called for by the
+original specification in [[../dcp-0003/dcp-0003.mediawiki|DCP0003]].  As a
+result, it is currently not possible for applications to make full use of their
+functionality.
+
+This proposal modifies the consensus rules to ensure their full functionality is
+available.
+
+As a reminder, a small sampling of some of the possible applications that
+relative locks enable include:
+
+* Lightning Network
+* Hash Time-Locked Contracts with Relative Timeouts
+* Bidirectional Payment Channels
+* Off-chain Atomic Swaps
+* Escrow with Timeout
+
+See [[../dcp-0003/dcp-0003.mediawiki|DCP0003]] for more information about these
+applications.
+
+==Specification==
+
+The view which is used to provide inputs necessary to determine sequence lock
+calculations for transactions with sequence locks enabled must provide access to
+the referenced inputs so long as those inputs exist from the point of view of
+the block from which the sequence locks are being evaluated.
+
+Recall that sequence locks are only enabled for inputs on transactions that are
+not coinbase or stakebase transactions, have a version greater than or equal to
+2, and do not have the disable flag set in the sequence number field.
+
+For reference, the disable flag is bit 31 of the of the sequence number field as
+shown in the following diagram:
+
+<img src="../dcp-0003/sequence_num.svg" width="100%" height="75" />
+
+In particular, transaction inputs with sequence locks enabled that are currently
+rejected by the current consensus rules must be permitted when appearing in
+transactions that exhibit the following properties:
+
+* The transaction appears in the regular tree and spends outputs from transactions which appear earlier in the same block
+* The transaction spends outputs from blocks before the block prior to the current block
+* The transaction spends outputs from a transaction shared between the current block and the block prior to it when the block has been disapproved
+
+==Rationale==
+
+The specific approach of implementing the necessary updates such that they apply
+to existing version 2 transactions was chosen for three primary reasons:
+
+* It significantly reduces the number of changes other software needs to make as compared to other approaches such as introducing a new transaction version
+* It provides a cleaner future upgrade path as it will allow the legacy view handling code to be completely removed once the changes specified herein are activated and the acivation height is buried sufficiently deep in the chain history
+* It supports more efficient view implementations which act solely on unspent outputs versus pruned transactions
+
+More generally, there is a strong preference for changes which do not require
+permanently carrying around legacy baggage that ultimately can't be fixed.  The
+proposed implementation satisfies that goal.
+
+==Deployment==
+
+This agenda will be deployed to mainnet using the standard Decred on-chain
+voting infrastructure as follows:
+
+{|
+!Name!!Setting
+|-
+|Deployment Version||6
+|-
+|Agenda ID||fixlnseqlocks
+|-
+|Agenda Description||Modify sequence lock handling as defined in DCP0004
+|-
+|Start Time||1548633600 (Jan 28th, 2019 00:00:00 +0000 UTC)
+|-
+|Expire Time||1580169600 (Jan 28th, 2020 00:00:00 +0000 UTC)
+|-
+|Mask||0x06 (Bits 1 and 2)
+|-
+|Choices||{|
+!Choice!!English Description!!Bits
+|-
+|abstain||abstain voting for change||0x00
+|-
+|no||keep the existing consensus rules||0x02 (Bit 1)
+|-
+|yes||change to the new consensus rules||0x04 (Bit 2)
+|}
+|}
+
+==Compatibility==
+
+This is a hard-forking change to the Decred consensus.  This means that once
+the agenda is voted in and becomes locked in, anybody running code that fully
+validates blocks must upgrade before the activation time or they will risk
+rejecting a chain containing a transaction that is invalid under the old rules.
+
+Other software that performs full validation will need to modify their consensus
+enforcement rules accordingly.  Since the changes introduced herein are less
+restrictive than the previous sequence lock rules, and therefore there will not
+be any transactions in the chain which do not conform to the newly activated
+rules, new implementations will not require any additional code to handle the
+previous more restrictive rules.
+
+==Reference Implementation==
+
+<pre>
+// Only create and use a view which preserves the expected consensus
+// semantics for relative lock times via sequence numbers until DCP0004
+// becomes active.
+legacySeqLockView := expectedView
+fixSeqLocksActive, err := b.isFixSeqLocksAgendaActive(node.parent)
+if err != nil {
+	return err
+}
+if lnFeaturesActive && !fixSeqLocksActive {
+	var err error
+	legacySeqLockView, err = b.createLegacySeqLockView(block, parent, view)
+	if err != nil {
+		return err
+	}
+}
+</pre>
+
+===Pull Requests===
+
+====New Sequence Lock View Enforcement====
+
+A reference implementation of enforcing the new sequence lock view semantics in
+accordance with the results of the agenda vote is implemented by
+[[https://github.com/decred/dcrd/pull/1579|pull request #1579]].
+
+====Deployment====
+
+A reference implementation of the required agenda definition is implemented by
+[[https://github.com/decred/dcrd/pull/1578|pull request #1578]].
+
+
+==Acknowledgements==
+
+===Collaborators===
+
+Thanks to the following individuals who provided valuable feedback during the
+review process of this proposal (alphabetical order):
+
+* Josh Rickmar ([[https://github.com/jrick|@jrick]])
+* Matheus Degiovani ([[https://github.com/matheusd|@matheusd]])
+
+===Additional References===
+
+* [[../dcp-0003/dcp-0003.mediawiki|DCP0003]]
+* [[http://lightning.network/lightning-network-paper.pdf|Lightning Network]]
+
+==Copyright==
+
+This document is licensed under the
+[https://creativecommons.org/publicdomain/zero/1.0 CC0-1.0: Creative Commons CC0 1.0 Universal]
+license.
+
+The code is licensed under the [https://opensource.org/licenses/ISC ISC License].

@@ -49,7 +49,7 @@ Recall that sequence locks are only enabled for inputs on transactions that are
 not coinbase or stakebase transactions, have a version greater than or equal to
 2, and do not have the disable flag set in the sequence number field.
 
-For reference, the disable flag is bit 31 of the of the sequence number field as
+For reference, the disable flag is bit 31 of the sequence number field as
 shown in the following diagram:
 
 <img src="../dcp-0003/sequence_num.svg" width="100%" height="75" />

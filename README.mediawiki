@@ -38,5 +38,5 @@ will be updated with more details once it is available.
 |-
 |[[./dcp-0003/dcp-0003.mediawiki|0003]]||Relative Lock Time Support||Active
 |-
-|[[./dcp-0004/dcp-0004.mediawiki|0004]]||Fix LN Sequence Locks View||Voting
+|[[./dcp-0004/dcp-0004.mediawiki|0004]]||Fix LN Sequence Locks View||Active
 |}

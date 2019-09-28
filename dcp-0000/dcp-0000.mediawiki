@@ -125,7 +125,7 @@ Another example is that the precision of regular integers in some languages may
 vary depending on the architecture (e.g 32-bit versus 64-bit).  Specifications
 must consider these differences and ensure they are adequately defined.
 
-Morever, consensus code must strive to actively avoid 3rd-party dependencies
+Moreover, consensus code must strive to actively avoid 3rd-party dependencies
 since other projects often have very different, and less strict, requirements
 than what is required by consensus code.
 
@@ -207,7 +207,7 @@ be activated should the change be accepted by the stakeholders.
 
 The test vectors section applies to any proposals that introduce facets that can
 reasonably be independently tested and serves to help multiple implementations
-ensure they are compatibile.  Some examples where test vectors might reasonably
+ensure they are compatible.  Some examples where test vectors might reasonably
 be included are new algorithms, new standard script types, smart contracts,
 additional script opcodes, and changes to the block or transaction structure or
 hash generation.
@@ -240,9 +240,9 @@ results, examples, footnotes, and future extensions.
 
 ===Specification===
 
-The status of a DCP is primarily defined by the on-chain voting sytem.  There
+The status of a DCP is primarily defined by the on-chain voting system.  There
 are two additional status indicators intended to allow clear DCP status
-signalling in case future updates replace or obsolete a given DCP.
+signaling in case future updates replace or obsolete a given DCP.
 
 The following chart shows the progression of a DCP according to the voting
 process:

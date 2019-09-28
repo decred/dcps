@@ -177,7 +177,7 @@ worst case scenarios in order to help ensure the algorithm behaves well under
 extreme conditions and attack scenarios:
 
 * All coins are managed as a single entity to simulate multiple stakeholders conspiring to manipulate the price.  In real world usage scenarios, the coins are distributed among different parties who act in their own best interest which is more stable than the simulated behavior.
-* The simulator provides much larger surges and ebbs in demand and staking proportions as compared with likely real world staking.  More concretely, it instantly surges the amount of staked coins by a full 20% of the entire supply while simultaneously doubling the demand and then drops them by the same.  This surge and ebb is signified by the section highlited in yellow.
+* The simulator provides much larger surges and ebbs in demand and staking proportions as compared with likely real world staking.  More concretely, it instantly surges the amount of staked coins by a full 20% of the entire supply while simultaneously doubling the demand and then drops them by the same.  This surge and ebb is signified by the section highlighted in yellow.
 * One of the demand distribution functions (DDF B) solely chases nominal estimated yield which is quite irrational in that it completely ignores things like opportunity cost, the volume-weighted average price, and the fact that the actual expected yield is lower when the pool size is larger. The vast majority of real-world stakers generally make much more rational decisions.
 
 ===Graphs===
@@ -335,7 +335,7 @@ func estimateSupply(height int64) int64 {
 }
 </pre>
 
-===Stake Diffulculty Calculation===
+===Stake Difficulty Calculation===
 
 <pre>
 // calcNextStakeDiff calculates the next stake difficulty for the given set

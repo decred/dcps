@@ -68,7 +68,7 @@ The specific approach of implementing the necessary updates such that they apply
 to existing version 2 transactions was chosen for three primary reasons:
 
 * It significantly reduces the number of changes other software needs to make as compared to other approaches such as introducing a new transaction version
-* It provides a cleaner future upgrade path as it will allow the legacy view handling code to be completely removed once the changes specified herein are activated and the acivation height is buried sufficiently deep in the chain history
+* It provides a cleaner future upgrade path as it will allow the legacy view handling code to be completely removed once the changes specified herein are activated and the activation height is buried sufficiently deep in the chain history
 * It supports more efficient view implementations which act solely on unspent outputs versus pruned transactions
 
 More generally, there is a strong preference for changes which do not require

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" fill-opacity="1" color-rendering="auto" color-interpolation="auto" text-rendering="auto" stroke="black" stroke-linecap="square" width="857" stroke-miterlimit="10" shape-rendering="auto" stroke-opacity="1" fill="black" stroke-dasharray="none" font-weight="normal" stroke-width="1" height="414" font-family="'Dialog'" font-style="normal" stroke-linejoin="miter" font-size="12px" stroke-dashoffset="0" image-rendering="auto">
+  <defs id="genericDefs"/>
+  <g>
+    <g fill="rgb(245,245,245)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke="rgb(245,245,245)">
+      <rect x="1.3462" y="351.9801" clip-path="url(#clipPath2)" width="262.1823" rx="4" ry="4" height="281.0584" stroke="none"/>
+    </g>
+    <g fill="rgb(235,235,235)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke="rgb(235,235,235)">
+      <rect x="1.3462" width="262.1823" height="22.3765" y="351.9801" clip-path="url(#clipPath2)" stroke="none"/>
+    </g>
+    <g font-size="15px" stroke-linecap="butt" transform="matrix(1,0,0,1,14,-336)" text-rendering="geometricPrecision" font-family="sans-serif" shape-rendering="geometricPrecision" stroke-miterlimit="1.45">
+      <text x="99.9288" xml:space="preserve" y="369.0606" clip-path="url(#clipPath2)" stroke="none">Full Block</text>
+      <rect x="1.3462" y="351.9801" clip-path="url(#clipPath2)" fill="none" width="262.1823" rx="4" ry="4" height="281.0584"/>
+    </g>
+    <g fill="url(#linearGradient1)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke="url(#linearGradient1)">
+      <rect x="25.3462" width="223.1823" height="35.8728" y="389.3565" clip-path="url(#clipPath2)" stroke="none"/>
+    </g>
+    <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke-linecap="butt">
+      <rect fill="none" x="25.3462" width="223.1823" height="35.8728" y="389.3565" clip-path="url(#clipPath2)"/>
+      <text x="100.9198" xml:space="preserve" y="412.0068" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none">Block Header</text>
+    </g>
+    <g fill="url(#linearGradient2)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke="url(#linearGradient2)">
+      <rect x="25.3462" width="223.1823" height="120" y="445.5385" clip-path="url(#clipPath2)" stroke="none"/>
+    </g>
+    <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke-linecap="butt">
+      <rect fill="none" x="25.3462" width="223.1823" height="120" y="445.5385" clip-path="url(#clipPath2)"/>
+      <text x="79.911" xml:space="preserve" y="510.2523" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none">Regular Transactions</text>
+    </g>
+    <g fill="url(#linearGradient3)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke="url(#linearGradient3)">
+      <rect x="25.3462" width="223.1823" height="60" y="558.0385" clip-path="url(#clipPath2)" stroke="none"/>
+    </g>
+    <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke-linecap="butt">
+      <rect fill="none" x="25.3462" width="223.1823" height="60" y="558.0385" clip-path="url(#clipPath2)"/>
+      <text x="85.58" xml:space="preserve" y="592.7523" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none">Stake Transactions</text>
+    </g>
+    <g fill="rgb(245,245,245)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke="rgb(245,245,245)">
+      <rect x="340.5285" y="351.9801" clip-path="url(#clipPath2)" width="262.1823" rx="4" ry="4" height="95.3765" stroke="none"/>
+      <rect x="340.5285" y="351.9801" clip-path="url(#clipPath2)" fill="rgb(235,235,235)" width="262.1823" height="22.3765" stroke="none"/>
+    </g>
+    <g font-size="15px" stroke-linecap="butt" transform="matrix(1,0,0,1,14,-336)" text-rendering="geometricPrecision" font-family="sans-serif" shape-rendering="geometricPrecision" stroke-miterlimit="1.45">
+      <text x="382.0042" xml:space="preserve" y="369.0606" clip-path="url(#clipPath2)" stroke="none">Space-Efficient Block Filter</text>
+      <rect x="340.5285" y="351.9801" clip-path="url(#clipPath2)" fill="none" width="262.1823" rx="4" ry="4" height="95.3765"/>
+    </g>
+    <g fill="url(#linearGradient4)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke="url(#linearGradient4)">
+      <rect x="364.5285" width="223.1823" height="43" y="389.3565" clip-path="url(#clipPath2)" stroke="none"/>
+    </g>
+    <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke-linecap="butt">
+      <rect fill="none" x="364.5285" width="223.1823" height="43" y="389.3565" clip-path="url(#clipPath2)"/>
+      <text x="448.4459" y="408.2198" clip-path="url(#clipPath2)" fill="white" font-family="sans-serif" stroke="none" xml:space="preserve">Filter Data</text>
+      <text x="408.3941" y="422.921" clip-path="url(#clipPath2)" fill="white" font-family="sans-serif" stroke="none" xml:space="preserve">0x230e0aeec....3b21f100</text>
+    </g>
+    <g text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="matrix(1,0,0,0.9744,702.7136,15.9762)">
+      <g clip-path="url(#clipPath3)">
+        <svg opacity="1" writing-mode="lr-tb" stop-color="rgb(0, 0, 0)" shape-rendering="auto" glyph-orientation-horizontal="0deg" color-profile="auto" lighting-color="rgb(255, 255, 255)" color="rgb(0, 0, 0)" font-weight="400" alignment-baseline="auto" font-style="normal" version="1.1" color-interpolation-filters="linearrgb" text-anchor="start" stroke-linecap="butt" color-interpolation="srgb" font-variant="normal" word-spacing="normal" fill-opacity="1" text-rendering="auto" clip-path="none" text-decoration="none" letter-spacing="normal" viewBox="0 0 36.83 76.322" glyph-orientation-vertical="auto" display="inline" font-size-adjust="none" fill="rgb(0, 0, 0)" overflow="hidden" font-stretch="normal" stroke-dasharray="none" id="svg1.svg8" stroke-miterlimit="4" stop-opacity="1" color-rendering="auto" font-size="12" mask="none" direction="ltr" baseline-shift="baseline" pointer-events="visiblepainted" enable-background="accumulate" fill-rule="nonzero" image-rendering="auto" stroke-dashoffset="0" width="139.201" marker-end="none" clip="auto" cursor="auto" stroke="none" filter="none" visibility="visible" kerning="auto" stroke-width="1" font-family="&quot;Arial&quot;,&quot;Helvetica&quot;,sans-serif" flood-opacity="1" clip-rule="nonzero" src="none" height="288.46" unicode-bidi="normal" stroke-linejoin="miter" stroke-opacity="1" flood-color="rgb(0, 0, 0)" dominant-baseline="auto" marker-start="none" marker-mid="none">
+          <defs id="svg1.defs2">
+            <linearGradient gradientTransform="matrix(9.7922 0 0 9.7922 -10419.858 -6868.17)" x1="652.44" x2="1119.58" gradientUnits="userSpaceOnUse" y1="634.72" y2="365.01" id="svg1.a">
+              <stop stop-color="#36b9bc" offset="0" id="svg1.stop4783"/>
+              <stop stop-color="#39d8aa" offset=".93" id="svg1.stop4785"/>
+            </linearGradient>
+            <linearGradient gradientTransform="matrix(9.7922 0 0 9.7922 -10419.858 -6868.17)" x1="266.9" x2="647.51" gradientUnits="userSpaceOnUse" y1="740.76" y2="360.15" id="svg1.b">
+              <stop stop-color="#2576f4" offset=".2" id="svg1.stop4788"/>
+              <stop stop-color="#3298da" offset=".94" id="svg1.stop4790"/>
+            </linearGradient>
+            <style id="svg1.style4781">
+              .c{fill:#091440}
+            </style>
+            <linearGradient x1="99.7403" gradientUnits="userSpaceOnUse" x2="248.5285" y1="389.3565" y2="389.3565" id="linearGradient1" spreadMethod="reflect">
+              <stop stop-opacity="1" stop-color="rgb(112,203,255)" offset="0%"/>
+              <stop stop-opacity="1" stop-color="rgb(56,182,255)" offset="100%"/>
+            </linearGradient>
+            <linearGradient x1="99.7403" gradientUnits="userSpaceOnUse" x2="248.5285" y1="445.5385" y2="445.5385" id="linearGradient2" spreadMethod="reflect">
+              <stop stop-opacity="1" stop-color="rgb(112,203,255)" offset="0%"/>
+              <stop stop-opacity="1" stop-color="rgb(56,182,255)" offset="100%"/>
+            </linearGradient>
+            <linearGradient x1="99.7403" gradientUnits="userSpaceOnUse" x2="248.5285" y1="558.0385" y2="558.0385" id="linearGradient3" spreadMethod="reflect">
+              <stop stop-opacity="1" stop-color="rgb(112,203,255)" offset="0%"/>
+              <stop stop-opacity="1" stop-color="rgb(56,182,255)" offset="100%"/>
+            </linearGradient>
+            <linearGradient x1="438.9226" gradientUnits="userSpaceOnUse" x2="587.7109" y1="389.3565" y2="389.3565" id="linearGradient4" spreadMethod="reflect">
+              <stop stop-opacity="1" stop-color="rgb(41,80,121)" offset="0%"/>
+              <stop stop-opacity="1" stop-color="rgb(27,52,79)" offset="100%"/>
+            </linearGradient>
+            <clipPath clipPathUnits="userSpaceOnUse" id="clipPath1">
+              <path d="M0 0 L857 0 L857 414 L0 414 L0 0 Z"/>
+            </clipPath>
+            <clipPath clipPathUnits="userSpaceOnUse" id="clipPath2">
+              <path d="M-14 336 L843 336 L843 750 L-14 750 L-14 336 Z"/>
+            </clipPath>
+            <clipPath clipPathUnits="userSpaceOnUse" id="clipPath3">
+              <path d="M-702.7136 -16.3966 L154.2864 -16.3966 L154.2864 408.499 L-702.7136 408.499 L-702.7136 -16.3966 Z"/>
+            </clipPath>
+            <clipPath clipPathUnits="userSpaceOnUse" id="clipPath4">
+              <path d="M231.9489 -310.0285 L231.9489 546.9714 L-182.0511 546.9714 L-182.0511 -310.0285 L231.9489 -310.0285 Z"/>
+            </clipPath>
+          </defs>
+          <g id="svg1.layer1" transform="translate(.272 .453)">
+            <g id="svg1.g4779" transform="matrix(.26458 0 0 .26458 -21.545 -2.05)">
+              <path fill="#323842" id="svg1.path4747" d="M196.439 9.176h-89.744c-12.793 0-23.161 6.51-23.161 19.3V275.2c0 12.79 10.368 19.3 23.161 19.3h89.744c12.79 0 23.161-6.51 23.161-19.3V28.477c.001-12.79-10.371-19.301-23.161-19.301z"/>
+              <g fill="#595959" id="svg1.g4751">
+                <path id="svg1.path4749" d="M197.115 6.04H182.66c-.782 0-1.417.782-1.417 1.749v1.387h17.289V7.789c0-.967-.635-1.749-1.417-1.749zM80.399 67.854v10.917c0 .782.781 1.417 1.749 1.417h1.386v-13.75h-1.386c-.967 0-1.749.634-1.749 1.416zm0-26.778v16.465c0 .782.781 1.417 1.749 1.417h1.386V39.659h-1.386c-.967-.001-1.749.635-1.749 1.417zm0 47.405v10.917c0 .782.781 1.417 1.749 1.417h1.386V87.064h-1.386c-.967 0-1.749.636-1.749 1.417z"/>
+              </g>
+              <path fill="#dcdee2" id="svg1.path4753" d="M90.772 39.658h121.59v221.228H90.772z"/>
+              <g fill="#454b53" id="svg1.g4761">
+                <circle r="3.377" id="svg1.circle4755" cx="152.131" cy="20.6"/>
+                <path id="svg1.path4757" d="M165.559 27.193h-27.983a2.492 2.492 0 00-2.493 2.493 2.492 2.492 0 002.493 2.494h27.983a2.494 2.494 0 100-4.987zm-13.991 247.328a3.978 3.978 0 00-3.976 3.975 3.978 3.978 0 003.976 3.976 3.977 3.977 0 003.974-3.976 3.977 3.977 0 00-3.974-3.975z"/>
+                <path id="svg1.path4759" d="M151.568 268.967c-5.263 0-9.53 4.268-9.53 9.529 0 5.263 4.268 9.53 9.53 9.53s9.528-4.268 9.528-9.53c.001-5.262-4.266-9.529-9.528-9.529zm0 14.194a4.667 4.667 0 01-4.665-4.665 4.667 4.667 0 014.665-4.665 4.667 4.667 0 014.664 4.665 4.667 4.667 0 01-4.664 4.665z"/>
+              </g>
+            </g>
+            <g id="svg1.g4834" stroke-width="9.792" transform="matrix(.02702 0 0 .02702 .199 19.878)">
+              <path fill="url(#svg1.a)" d="M934.16 698.25L1117.91 882H919.46l-294-294h198.45a147 147 0 100-294h-73.5l-147-147h220.5c162.38 0 294 131.63 294 294 0 119.23-58.8 215.35-183.75 257.25z" stroke-width="9.792" id="svg1.path4797"/>
+              <path fill="url(#svg1.b)" d="M419.66 330.75L235.91 147h198.45l294 294H529.91a147 147 0 000 294h73.5l147 147h-220.5c-162.37 0-294-131.63-294-294 0-119.23 58.8-215.35 183.75-257.25z" stroke-width="9.792" id="svg1.path4799"/>
+              <path fill="#091440" d="M553.75 1098.92v-.41c0-41.67 32.06-74.35 75.36-74.35 29.21 0 48 12.26 60.66 29.83L660 1077.07c-8.17-10.22-17.56-16.76-31.24-16.76-20 0-34.12 17-34.12 37.79v.41c0 21.45 14.1 38.2 34.12 38.2 14.9 0 23.69-7 32.27-17.36l29.82 21.24c-13.48 18.58-31.66 32.27-63.32 32.27-40.9 0-73.78-31.25-73.78-73.94z" stroke-width="9.792" id="svg1.path4801" class="c"/>
+              <path fill="#091440" d="M704.92 1026H773c22 0 37.23 5.73 46.9 15.61 8.44 8.22 12.75 19.33 12.75 33.53v.41c0 22-11.72 36.61-29.62 44.23L837.4 1170h-46.08l-29-43.64h-17.49V1170h-39.91zm66.24 69.09c13.58 0 21.39-6.58 21.39-17.07v-.41c0-11.31-8.23-17.07-21.59-17.07h-26.13v34.55z" stroke-width="9.792" id="svg1.path4803" class="c"/>
+              <path fill="#091440" d="M851.39 1026H967.2v34h-76.31v21.8H960v31.48h-69.11v22.82h77.34v34H851.39z" stroke-width="9.792" id="svg1.path4805" class="c"/>
+              <path fill="#091440" d="M989.13 1026h55.54c51.42 0 81.25 29.62 81.25 71.18v.41c0 41.55-30.24 72.41-82.08 72.41h-54.71zm56.16 108.61c23.86 0 39.7-13.16 39.7-36.4v-.42c0-23-15.84-36.41-39.7-36.41H1029v73.23z" stroke-width="9.792" id="svg1.path4807" class="c"/>
+              <path fill="#091440" d="M472.35 1172.69c-42.27 0-72.94-31.14-72.94-74 0-42.37 29.81-74.32 69.36-74.32 21.18 0 38.77 7.88 50.86 22.81 11 13.61 17.11 32.79 17.11 54 0 2.44-.18 4.71-.4 7.3H428.88l.34 2.08c3.86 23.73 20.6 38.46 43.68 38.46 15.19 0 27.08-5 39.49-16.73l17 15.12c-14.75 16.99-33.39 25.28-57.04 25.28zM468.49 1048c-20.78 0-36.31 15.65-39.56 39.88l-.27 2h78.77l-.2-2c-2.53-24.54-17.37-39.88-38.74-39.88z" stroke-width="9.792" id="svg1.path4809" class="c"/>
+              <path fill="#091440" d="M299 1172.69c-32.81 0-66-25.53-66-74.33s33.21-74.36 66-74.36c19.5 0 35.34 8.2 48.41 25.06l3.22 4.14v-93.12h29.9V1170h-29.9v-28.56l-3.26 4.6c-12.7 17.96-28.52 26.65-48.37 26.65zm8-123.19c-25.83 0-43.87 20.09-43.87 48.86 0 28.31 18.45 48.86 43.87 48.86 25.17 0 44.15-21 44.15-48.86s-18.93-48.86-44.1-48.86z" stroke-width="9.792" id="svg1.path4811" class="c"/>
+            </g>
+          </g>
+        </svg>
+      </g>
+    </g>
+    <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke-linecap="butt">
+      <path fill="none" d="M248.5285 505.5385 L284.0285 505.5385 L288.4035 504.9135 L291.5285 503.0385 L293.4035 499.9135 L294.0285 495.5385 L294.0285 420.8565 L294.6535 416.4815 L296.5285 413.3565 L299.6535 411.4815 L304.0285 410.8565 L332.5006 410.8565" clip-path="url(#clipPath2)"/>
+      <path d="M340.5006 410.8565 L328.5006 405.8565 L331.5006 410.8565 L328.5006 415.8565 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <path fill="none" d="M248.5285 588.0385 L284.0285 588.0385 L288.4035 587.4135 L291.5285 585.5385 L293.4035 582.4135 L294.0285 578.0385 L294.0285 420.5 L294.6535 416.125 L296.5285 413 L299.6535 411.125 L304.0285 410.5 L332.5126 410.5" clip-path="url(#clipPath2)"/>
+      <path d="M340.5126 410.5 L328.5126 405.5 L331.5126 410.5 L328.5126 415.5 Z" clip-path="url(#clipPath2)" stroke="none"/>
+    </g>
+    <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" font-family="sans-serif" transform="matrix(0,-1,1,0,310.0285,231.9489)" stroke-linecap="butt">
+      <text x="2" xml:space="preserve" y="14.0645" clip-path="url(#clipPath4)" stroke="none">Filter Created From Txns</text>
+    </g>
+    <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" stroke-width="2" shape-rendering="geometricPrecision" transform="matrix(1,0,0,1,14,-336)" stroke-linecap="butt">
+      <path fill="none" d="M471.6197 447.3565 L471.6197 457.3565 L472.2447 461.7315 L474.1197 464.8565 L477.2447 466.7315 L481.6197 467.3565 L635.7109 467.3565 L640.0859 466.7315 L643.2109 464.8565 L645.0859 461.7315 L645.7109 457.3565 L645.7109 409.6683 L646.3359 405.2933 L648.2109 402.1683 L651.3359 400.2933 L655.7109 399.6683 L679.7119 399.6683" clip-path="url(#clipPath2)"/>
+      <path d="M688.7119 399.6683 L675.2119 394.0433 L678.5869 399.6683 L675.2119 405.2933 Z" clip-path="url(#clipPath2)" stroke="none"/>
+      <text x="457.9514" y="483.421" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" stroke-width="1" xml:space="preserve">1) Lightweight Client Downloads Filter</text>
+      <path fill="none" stroke-dasharray="6,2" d="M103 633.0391 L103 703.5 L103.625 707.875 L105.5 711 L108.625 712.875 L113 713.5 L783.452 713.5 L787.827 712.875 L790.952 711 L792.827 707.875 L793.452 703.5 L793.452 641.044" stroke-width="1" clip-path="url(#clipPath2)"/>
+      <path stroke-dasharray="6,2" d="M793.452 633.044 L788.452 645.044 L793.452 642.044 L798.452 645.044 Z" stroke-width="1" clip-path="url(#clipPath2)" stroke="none"/>
+      <text x="334.8383" y="729.5645" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" stroke-width="1" xml:space="preserve">3) Lightweight Client Downloads Full Block</text>
+      <path fill="none" stroke-dasharray="6,2" d="M726.892 633.06 L726.892 665.5 L726.267 669.875 L724.392 673 L721.267 674.875 L716.892 675.5 L179 675.5 L174.625 674.875 L171.5 673 L169.625 669.875 L169 665.5 L169 641.0136" stroke-width="1" clip-path="url(#clipPath2)"/>
+      <path stroke-dasharray="6,2" d="M169 633.0136 L164 645.0136 L169 642.0136 L174 645.0136 Z" stroke-width="1" clip-path="url(#clipPath2)" stroke="none"/>
+      <text x="293.5368" y="668.8633" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" stroke-width="1" xml:space="preserve">2) Lightweight Client Requests Full Block Only As Needed</text>
+    </g>
+  </g>
+</svg>

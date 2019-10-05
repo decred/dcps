@@ -1,0 +1,897 @@
+<pre>
+DCP: 0005
+Title: Block Header Commitments
+Author: Dave Collins <davec@decred.org>
+Status: Defined
+Created: 2019-10-05
+License: CC0-1.0
+License-Code: ISC
+</pre>
+
+==Abstract==
+
+This specifies modifications to the Decred block header to provide an extensible
+framework, via future consensus-voted hard forks, for adding consensus-enforced
+commitments to the header without requiring any changes to its size or
+mining-related field offsets along with an initial commitment to an optimized
+version of Golomb-Coded Set (GCS) block filters.
+
+The main changes are:
+
+* Rolling the current <code>StakeRoot</code> field into the <code>MerkleRoot</code> field
+* Repurposing the <code>StakeRoot</code> field to house header commitments
+* Committing to an optimized version 2 block filter for use by lightweight clients
+
+==Motivation==
+
+Currently, the only fully-supported trustless security model in Decred is the
+full-node model where every node and wallet is required to have access to the
+entire blockchain to verify that every block faithfully follows all of the
+consensus validation rules.
+
+While this model provides the highest security guarantees and is required by the
+consensus daemon to provide an ordered and timestamped public ledger that
+protects against double spends and modification of existing transactions, it is
+highly desirable to support other security models where applications can make
+varying levels of security trade-offs according to their domain in exchange for
+no longer requiring access to whole blocks or the entire blockchain.
+
+===Simplified Payment Verification (SPV)===
+
+One well-known alternative security model is SPV.  This model supports verifying
+payments without requiring access to the entire blockchain in exchange for
+trusting Proof-of-Work (PoW) and Proof-of-Stake (PoS) miners to verify the
+history and a stronger non-partitioning assumption.  However, this means that if
+an attacker is able to overpower the network's PoW hash power, it can trick SPV
+nodes into believing fabricated transactions are valid for as long as the
+attacker overpowers the network.
+
+Another complication with this model is that it relies on the ability to
+identify and retrieve relevant transactions which can be challenging to do
+without leaking information regarding coin ownership, which is not ideal from a
+privacy perspective.  Further, without a mechanism to prevent lying by omission,
+malicious peers can intentionally fail to report the existence of relevant
+transactions which can lead to lightweight clients not becoming aware of
+relevant transactions.
+
+In addition to all potential avenues for fraud typical to pure PoW systems,
+Decred's hybrid PoW and PoS model adds additional considerations such as
+consensus voting results, ticket selection semantics, and block invalidation.
+
+Nevertheless, it is possible to bring the SPV security level very close to that
+of full nodes through a combination of committed fraud proofs, inclusion proofs,
+and filters so long as there is at least one honest fully-validating node on the
+network to sound the alarm.  This is the case because once it is possible to
+generate a compact fraud proof which SPV nodes can verify quickly, they can
+securely reject the associated invalid block(s) accordingly.
+
+For most applications, an SPV model with increased security is preferable to the
+completely trust-based model many lightweight and mobile wallets use today where
+they communicate with a centralized server controlled by the wallet vendor and
+simply trust everything the service reports.
+
+===Alternative Security Models===
+
+There are also a variety of other security models with varying levels of
+trade-offs that can be achieved when commitments which allow compact proofs that
+can be verified quickly are made available.  A couple of examples are history
+pruning with full validation starting from the first non-pruned block, and
+selective proofing.
+
+With careful design, applications can make use of relevant committed proofs to
+offer strong cryptographic guarantees of certain aspects without needing to
+fully validate the entire chain themselves.  Such models are typically highly
+preferable to the fully trust-based models that most applications use at the
+current time.
+
+===Merkle Trees===
+
+Many applications, including the aforementioned SPV model, rely on the ability
+to quickly and efficiently prove whether a given item is a member of a set
+without having access to all elements in the set.  One of the most common data
+structures used for this purpose is a Merkle tree since it provides the ability
+to generate log-sized inclusion proofs of set membership.
+
+A Merkle tree, as defined in this proposal, is a hash-based data structure that
+forms a tree such that each leaf node is the hash of arbitrary data to commit to
+and all non-leaf nodes are the hash of the concatenation of their children.
+More formally, it is a directed acyclic graph.
+
+The final resulting hash at the top of the tree is called the Merkle root or
+root hash.
+
+While other more general forms of Merkle trees that work with unordered sets
+exist, this proposal refers to the unique Merkle tree construct originally
+implemented by Satoshi, which relies on construction of the tree from an ordered
+list.
+
+The following diagram illustrates a balanced binary Merkle tree with 8 leaves:
+
+<img src="merkle_tree.svg" width="100%" height="560" />
+
+===Inclusion Proofs===
+
+An inclusion proof is a cryptographic method that provides the ability to prove
+an element is a member of a set without requiring access to all elements in the
+set.  For the purposes of this proposal, they more specifically refer to
+log-sized Merkle proofs for a single set element.
+
+In general, single-element Merkle proofs require the following details to prove
+set membership:
+
+* The Merkle root of the entire set
+* The hash of the item to prove
+* The position of the item within the initial ordered list that comprised the set
+* The intermediate sibling hashes along the path from the target leaf to prove through the root
+
+The last two items are typically bundled together according to some well-defined
+format and known as the inclusion proof.
+
+For example, consider the example Merkle tree in the previous section which
+consists of 8 items in the set.  The path of the item in the set represented by
+the leaf at index 2 (<code>L0:2</code> in the diagram) consists of the leaf itself,
+the node at level 1, index 1 (<code>L1:1</code>), the node at level 2, index 0
+(<code>L2:0</code>), and the Merkle root.
+
+Thus, the sibling hashes of the inclusion proof for the item would consist of
+the hash of its right sibling at level 0, index 3 (<code>L0:3</code>), the hash
+at level 1, index 0 (<code>L1:0</code>), and the hash at level 2, index 1
+(<code>L2:1</code>).
+
+<img src="merkle_tree_inclusion_proof.svg" width="100%" height="560" />
+
+This allows the prover to hash the original item and then calculate the expected
+Merkle root independently by recalculating the parent node at each level of the
+tree by concatenating its own calculated value along with the provided sibling
+hash from the proof at that level.  The item is a member of the set if the
+result matches the original Merkle root.
+
+===Fraud Proofs===
+
+A fraud proof is, in essence, a cryptographic method that provides the ability
+to prove data is invalid without requiring access to the entire state of a
+system.
+
+For example, a fraud proof might provide all the details needed for a
+lightweight client to efficiently prove that a transaction is invalid due to
+double spending despite the client not having access to all of the block data or
+the state of all unspent transactions.
+
+The addition of the proposed header commitments paves the way for committing to
+data necessary to generate such compact fraud proofs in the future.
+
+===Block Filters===
+
+In addition to generally proving an item is in a set, many applications also
+greatly benefit from the ability to quickly, efficiently, and securely determine
+if data they are interested in is likely part of the contents of a block without
+having access to the entire block.  This allows them to avoid downloading and
+otherwise completely ignore blocks that do not apply to them.
+
+Ideally, this ability could be provided with 100% accuracy, however, the only
+known ways to achieve 100% accurate set membership testing is either by having
+access to the entire set or by having foreknowledge of all of the elements in
+the set.  Thus, unfortunately, neither option works for the stated goals and
+means another solution with less than 100% accuracy must be used.
+
+Making use of space-efficient probabilistic block filters populated with the
+contents of a block is an ideal way to provide the desired capabilities in
+exchange for a small number of false positives.
+
+A probabilistic block filter will report with 100% accuracy when the block
+actually contains queried data, however, it might also report the block contains
+queried data when it actually doesn't with a certain false positive rate.
+
+In addition, in order to provide the greatest privacy and prevent servers from
+lying by omission, the block filters can be deterministically generated, stored,
+and served to lightweight clients.  The lightweight clients may then download
+the filters for each block, query them to determine if the block covered by the
+filter likely contains information relevant to them, and only download the full
+block if there is a match.
+
+<img src="block_filter_overview.svg" width="100%" height="415" />
+
+===Header Commitments===
+
+One of the issues for lightweight clients making use of the aforementioned data
+structures and proofs in a decentralized environment of untrusted sources is
+that a malicious actor can easily trick them unless there is also a way to prove
+that the provided information accurately represents the data in the block.
+
+In the case of the Merkle trees for the existing regular and stake transaction
+trees, this is accomplished by committing to their respective Merkle roots in
+the block header and having all fully-validating nodes independently calculate
+and verify they are valid as a part of the consensus rules.
+
+This process can be generalized by modifying the block header to commit to the
+root hash of a Merkle tree whose leaves are themselves a commitment to another
+data structure or proof, such as those previously described, and modifying all
+fully-validating nodes to enforce they are valid by independently calculating
+and verifying them as part of the consensus rules.
+
+This approach allows log-sized inclusion proofs to be generated for the
+committed data structures so that applications are able to efficiently, quickly,
+and securely prove a data structure accurately represents the data in the block.
+
+==Specification==
+
+===Hash Function===
+
+Unless otherwise specified, all hashing operations in this specification MUST be
+performed with the <code>BLAKE-256</code> hash function with 14 rounds.
+
+===Merkle Trees===
+
+All Merkle trees in this specification MUST be constructed according to the
+unique Merkle tree construct originally implemented by Satoshi, which relies on
+construction of the tree from an ordered list as follows:
+
+# Accept a list of <code>BLAKE-256</code> hashes that commit to the original data
+#: NOTE: This hash list is usually generated by replacing each item in the original list with its <code>BLAKE-256</code> hash
+# If the given list is empty, return a 32-byte root hash of all zeroes; otherwise
+# While the list contains two or more items:
+## If the number of items remaining in the list is odd, duplicate the final hash
+## Combine each pair of adjacent entries with the <code>BLAKE-256</code> hash of the two entries concatenated together
+##: NOTE: The list will have <code>ceil(N/2)</code> entries remaining after combining the adjacent entries
+# Return the final remaining item in the list as the Merkle root
+
+The following diagram illustrates these semantics:
+
+<img src="merkle_root_calc.svg" width="100%" height="650" />
+
+Take special note that the aforementioned algorithm will result in a couple of
+notable cases as follows:
+
+* Lists with no leaves MUST be assigned a 32-byte root hash of all zeroes
+* Lists with a single entry MUST be assigned a 32-byte root hash identical to the single leaf hash
+
+WARNING: The requirement for duplicating the final hash for internal tree levels
+that have an odd number of nodes must be carefully considered by applications
+making use of the resulting Merkle root because it means the final calculated
+Merkle root for a tree that internally duplicated a hash and one that actually
+included a duplicate hash at that position will be indistinguishable.
+
+===Combined Transaction Tree Merkle Root===
+
+The 32 bytes starting at zero-based byte offset 36 in the serialized block
+header, known as the <code>MerkleRoot</code> as of the time of this
+specification, MUST be set to the <code>BLAKE-256</code> hash of the
+concatenation of the individual Merkle roots calculated from the regular and
+stake transaction trees.
+
+In other words, it MUST be set to:
+
+<code>BLAKE-256(regular_tree_merkle_root || stake_tree_merkle_root)</code>
+
+Note that the calculated value is the Merkle root of a two-leaf Merkle tree
+whose leaves consist of the individual Merkle roots of the regular and stake
+transactions trees, respectively.
+
+<img src="combined_merkle_root.svg" width="100%" height="560" />
+
+===Variable Length Integers===
+
+Variable length integers are used to specify the number of items in the
+[[#golomb-coded-sets|GCS]] sets and MUST be canonically encoded according to the
+encoding specified in this section.  Note that this is the same encoding used
+throughout the wire protocol.
+
+The encoding supports integers up to a max value of <code>2^64 - 1</code> and
+uses a variable number of bytes depending on the value being encoded.  It
+produces fewer bytes for smaller numbers as opposed to a fixed-size encoding.
+
+{|
+!Value (in hexadecimal)!!Length in Bytes!!Encoding
+|-
+|< 0xfd||1||value as uint8
+|-
+|<= 0xffff||3||0xfd followed by value as a little-endian uint16
+|-
+|<= 0xffffffff||5||0xfe followed by value as a little-endian uint32
+|-
+|<= 0xffffffffffffffff||9||0xff followed by value as a little-endian uint64
+|}
+
+Since it is possible to represent the same value in multiple ways with the
+encoding, attempts to decode an encoded value that is not canonically encoded
+(the encoding the produces the smallest possible number of bytes) MUST be
+rejected.
+
+The following table lists the maximum values that can be encoded for a given
+number of bytes:
+
+{|
+!Length in Bytes!!Value (in decimal)
+|-
+|1||252
+|-
+|3||65535
+|-
+|5||4294967295
+|-
+|9||18446744073709551615
+|}
+
+===Golomb-coded Sets===
+
+A Golomb-Coded Set (GCS) is a space-efficient probabilistic data structure that
+is used in this proposal to test set membership with a tunable false positive
+rate while simultaneously preventing false negatives.  In other words, items
+that are in the set will always match, but items that are not in the set will
+also sometimes match with the chosen false positive rate.
+
+The GCS variation defined by this specification MUST NOT permit empty items
+(data of zero length) to be added to the set and MUST be parameterized by:
+
+* A parameter <code>B</code> that defines the remainder code bit size
+* A parameter <code>M</code> that defines the false positive rate as <code>1/M</code>
+* A <code>key</code> for the <code>SipHash-2-4</code> function
+* The number of items <code>N</code> in the set
+
+A GCS MUST be constructed with the following steps:
+
+# Remove zero-length items from the set of input items
+# Hash all remaining items to unsigned 64-bit integers with the <code>SipHash-2-4</code> hash function keyed with <code>key</code>
+# Remove any duplicates from the resulting integers and adjust <code>N</code> accordingly
+# Map the remaining integers uniformly to the range <code>[0, N*M)</code> by multiplying each integer by <code>N*M</code> and using the high 64 bits of the 128-bit result <sup>[ [[#fast-reduction-method|why?]] ]</sup>
+# Sort the resulting integers in ascending order
+# Write the length of the resulting list of integers <code>N</code> as a [[#variable-length-integers|variable length integer]] to an output bit stream
+# Write the difference between each integer and the previous one encoded with [[#golomb-rice-coding|Golomb-Rice]] coding using <code>B</code> bits for the remainder code to the output bit stream
+# Pad the output bit stream with 0 bits to the nearest byte boundary
+
+<img src="gcs_construction.svg" width="100%" height="800" />
+
+====Golomb-Rice Coding====
+
+Generic Golomb-Rice coding splits a value into a quotient and remainder by
+making use of a tunable parameter that can be any positive integer.  The
+quotient is encoded with unary and the remainder is encoded with truncated
+binary encoding.
+
+However, when the tunable parameter is a power of two, the encoding of the
+remainder is equivalent to standard big-endian binary encoding and the result is
+often referred to as Rice coding.<ref>[[https://en.wikipedia.org/wiki/Golomb_coding#Rice_coding|Rice coding]]</ref>
+
+The tunable parameter for this specification MUST be <code>2^B</code>, where
+<code>B</code> is the remainder code bit size parameter as previously described.
+Consequently, implementations are only required to implement the simpler Rice
+encoding.
+
+The following steps will generate the required Rice encoding for a value <code>V</code>:
+
+# Calculate the quotient <code>q</code> as <code>q = floor(V / 2^B)</code> and the remainder <code>r</code> as <code>r = V % 2^B</code>
+#: NOTE: Implementations MAY alternatively wish to optimize this by using a bitmask and bit shifting to calculate the remainder as <code>r = V & (2^B - 1)</code> and the quotient as <code>q = (V - r) >> B</code>
+# Write calculated quotient <code>q</code> in unary coding as follows:
+## Write a series of single 1 bits <code>q</code> times
+## Write a single 0 bit
+# Write calculated remainder <code>r</code> in big endian with <code>B</code> bits
+
+<img src="rice_coding.svg" width="100%" height="645" />
+
+====Membership Testing====
+
+Determining if an item is a member of a compressed GCS requires hashing the item
+being tested for membership with the exact same procedure as the original
+members of the set to a search term and then reconstructing the hashed values
+that represent those members from the encoded differences by accumulating them
+into a running sum.  Each intermediate sum is one of the original hashed members
+of the set.
+
+Thus, if the search term matches one of the intermediate sums, the item is
+likely a member of the set (with the specified false positive rate).  Since the
+GCS encodes the set members in ascending order, the implementation can safely
+stop searching and report the item is NOT a member of the set if the
+intermediate sum is greater than search term.
+
+This specification only provides the steps necessary to match a single item,
+however, applications that require testing for membership of multiple items at
+the same time (intersection testing) SHOULD provide an implementation that takes
+advantage of the set members being encoded in ascending order to significantly
+speed up the search by hashing all of the items to test for membership and
+sorting them in ascending order prior to performing the search.
+
+The following steps can be used to test set membership of a single item:
+
+# Return false if the compressed GCS has length 0 indicating it is empty or the item to test is zero length
+# Read the number of items in the filter by reading a [[#variable-length-integers|variable length integer]]
+# Hash the search item to an unsigned 64-bit integer with the <code>SipHash-2-4</code> hash function keyed with <code>key</code>
+# Map the integer uniformly to the range <code>[0, N*M)</code> by multiplying the integer by <code>N*M</code> and using the high 64 bits of the 128-bit result
+# Initialize intermediate sum <code>s</code> to 0
+# Loop while there are still unread items in the compressed filter:
+## Decode the original encoded difference <code>d</code> as follows:
+### Read the unary-encoded quotient <code>q</code> from the bit stream as follows:
+#### Set <code>q</code> to 0
+#### Read from the bit stream until a bit with a value of 0 is encountered while incrementing <code>q</code> by 1 for every bit read excluding the final 0
+### Read the remainder <code>r</code> from the bit stream as a big-endian with <code>B</code> bits
+### Calculate the difference <code>d</code> as <code>d = (q << B) + r</code>
+## Reconstruct the hash value that represents the original set item by incrementing the intermediate sum by the decoded difference <code>d</code> (<code>s += d</code>)
+## Return true if the search term is equal to the intermediate sum <code>s</code>
+## Return false if intermediate sum <code>s</code> is greater than the search term
+# Return false since there are no longer any items in the GCS to search
+
+===Version 2 Block Filters===
+
+Version 2 block filters MUST be a [[#golomb-coded-sets|GCS]] loaded with the
+items from the block as described in the [[#Contents|Contents]] section and
+constructed with the following parameters:
+
+* The bit size parameter <code>B</code> set to 19
+* The false positive rate parameter <code>M</code> set to 784931 <sup>[ [[#optimal-gcs-parameters|why?]] ]</sup>
+* The <code>key</code> set to the first 16 bytes of the <code>MerkleRoot</code> (in the exact order produced by the hash function) of the block covered by the filter
+
+====Contents====
+
+The following special cases MUST be applied to all items in both the regular and
+stake transaction trees:
+
+* Scripts that are not version 0, empty, or larger than the max allowed script size, <code>16384</code> bytes, MUST NOT be included
+* Output scripts for transactions in the stake tree MUST NOT include the initial stake opcode tag (<code>OP_SS*</code>)
+** NOTE: This applies both to when they are created and when they are redeemed by transaction inputs
+
+While considering the aforementioned exceptions, the following items MUST be
+included:
+
+* For transactions in the regular transaction tree:
+** Previous output scripts referenced by the transaction inputs, with the exception of the coinbase which has no inputs
+** All output scripts of the transaction outputs
+* For transactions in the stake transaction tree:
+** For ticket purchases:
+*** Previous output scripts referenced by the transaction inputs
+*** Commitment output scripts converted from the commitment hash and type to the full script
+*** Change output scripts
+** For votes:
+*** Subsidy generation output scripts
+*** Output scripts that pay the original ticket commitments
+** For revocations:
+*** Output scripts that pay the original ticket commitments
+
+Note that the voting rights output of ticket purchases and references to it by
+votes and revocations is intentionally NOT included because lightweight clients,
+by definition, do not have access to the full blocks, so they can't reasonably
+vote on their validity.  In addition, lightweight clients are able to discover
+the relevant transactions via the their reward commitments and change outputs.
+
+===Block Header Commitments===
+
+This specification introduces a new versioned block header commitment scheme
+which consists of generating a new per-block Merkle tree and repurposing the
+<code>StakeRoot</code> field of the block header to commit to its Merkle root.
+
+The new per-block Merkle tree is to be referred to as the commitment Merkle tree
+and its Merkle root is given the name commitment root.
+
+The leaves used to construct the commitment Merkle tree MUST depend on a
+specific header commitment version and every fully-validating node MUST
+independently calculate the commitment root and reject any blocks that commit to
+an invalid value.
+
+The following diagram illustrates the block header committing to the commitment
+root of a commitment Merkle tree with 4 commitments.
+
+<img src="block_header_commitments.svg" width="100%" height="450" />
+
+====Version 1 Block Header Commitment====
+
+The commitment Merkle tree for version 1 header commitments MUST consist of the
+following leaves:
+
+* The <code>BLAKE-256</code> hash of the serialized [[#version-2-block-filters|version 2 block filter]] for the block
+
+The 32 bytes starting at zero-based byte offset 68 in the serialized block
+header, known as the <code>StakeRoot</code> as of the time of this
+specification, MUST be set to the resulting version 1 commitment root.
+
+Since the version 1 header commitment only consists of a single item,
+implementations MAY wish to simplify their verification logic by taking
+advantage of the fact that a single leaf Merkle tree produces a Merkle root that
+is identical to the leaf.  In other words, the commitment root for version 1
+header commitments will be the hash of the only item being committed to, namely
+the version 2 block filter.
+
+However, implementations SHOULD implement code to verify the commitment root for
+an arbitrary number of commitments so they are ready for the addition of new
+commitments in the future.
+
+====Generating Commitment Root Inclusion Proofs====
+
+Inclusion proofs for block header commitments MUST consist of the following items:
+
+* The 32-bit zero-based leaf index of the item to prove (also known as the proof index)
+* A list of sibling hashes in the order in which they are encountered when calculating the commitment root (also known as proof hashes)
+
+The list of sibling hashes can be generated as follows:
+
+# Accept a list of <code>BLAKE-256</code> hashes that commit to the original data and the zero-based leaf index of the item to prove
+#: NOTE: This hash list is usually generated by replacing each item in the original list with its <code>BLAKE-256</code> hash
+# If the input list is empty, return an empty sibling hash list
+# If the given leaf index to prove is greater than or equal to the number of items the input list contains, return an empty sibling hash list
+# While the input list contains two or more items:
+## If the number of items remaining in the input list is odd, duplicate the final hash in the list
+## If the leaf index is odd, append the hash before the leaf index to the sibling hash list, otherwise append the hash after the leaf index to the sibling hash list
+## Combine each pair of adjacent entries with the <code>BLAKE-256</code> hash of the two entries concatenated together
+##: NOTE: The input list will have <code>ceil(N/2)</code> entries remaining after combining the adjacent entries
+## Shift the leaf index right by one bit
+# Return the sibling hash list
+
+The following diagram illustrates these semantics:
+
+<img src="generate_commitment_root_proof.svg" width="100%" height="880" />
+
+====Verifying Commitment Root Inclusion Proofs====
+
+Verifying an inclusion proof for a block header commitment requires the following details:
+
+* The expected commitment root from the block header
+* The hash of the commitment to prove
+* The inclusion proof itself which consists of:
+** The zero-based proof index
+** The list of sibling proof hashes
+
+The inclusion proof can then can be verified as follows:
+
+# Accept the expected commitment root, the hash of the commitment to prove, and the inclusion proof
+# Fail verification if the number of proof hashes is greater than 32 since higher values imply more than the maximum possible number of leaves
+# Fail verification if the proof index is greater than the max possible value it could be based on the number of provided proof hashes
+##: NOTE: The max possible proof index is calculated by shifting 1 left by the number of provided proof hashes and subtracting 1.
+# Set the calculated commitment root to the provided hash of the commitment to prove
+# Loop through each of the provided proof hashes:
+## If the proof index is odd, concatenate the calculated commitment root to the proof hash and update the calculated commitment root to the <code>BLAKE-256</code> hash of the concatenated value (e.g. <code>commitmentRoot = BLAKE-256(proofHash || commitmentRoot)</code>); otherwise
+## If the proof index is even, concatenate the proof hash to the calculated commitment root and update the calculated commitment root to the <code>BLAKE-256</code> hash of the concatenated value (e.g. <code>commitmentRoot = BLAKE-256(commitmentRoot || proofHash)</code>)
+## Shift the proof index right by one bit
+# Fail verification if the calculated commitment root does not match the expected commitment root
+# Pass Verification
+
+<img src="verify_commitment_root_proof.svg" width="100%" height="925" />
+
+==Rationale==
+
+===Header Modifications===
+
+The most efficient and convenient location to store consensus-enforced
+commitments which allow compact proofs to be generated is the block header.
+Additionally, most software that works with the blockchain nearly always
+requires access to the block headers in order to follow the chain with the most
+PoW and prove transactions are included in the associated block by making use of
+the committed Merkle root, so they will typically already have access to them.
+Further, since headers are already an integral part of the system, there is
+already significant tooling for acquiring and working with them.
+
+The proposed changes are intentionally engineered to avoid changing the overall
+size of the header and field offsets of all mining-related fields to prevent
+breaking existing mining hardware and infrastructure that secures the network.
+
+The <code>StakeRoot</code> field was repurposed to house the new commitment
+scheme since it is already the correct size for a commitment Merkle root hash
+and the existing stake transaction tree Merkle root can be rolled into the
+existing MerkleRoot field elegantly without requiring significant modifications.
+
+Making use of a Merkle tree for calculating the commitment root allows efficient
+log-sized inclusion proofs of the commitments to be generated and requested from
+untrusted sources.  Further, each leaf is itself intended to be a commitment to
+some arbitrary data which will typically be some structure that employs
+techniques that also allow compact fraud and inclusion proofs to be constructed
+such as Fenwick trees, Golomb-Rice filters, and additional Merkle trees.
+
+This approach provides an extensible and efficient method of consensus-enforced
+proof chaining which allows the block header to commit to an arbitrary number of
+short proofs which lightweight clients can very quickly verify.
+
+An initial commitment to block filters necessary to securely support lightweight
+clients has been included as a part of this proposal to immediately make use of
+the new infrastructure without requiring a several month voting period first.
+
+Finally, once the block filters are committed to via the repurposed
+<code>StakeRoot</code> field, their specific implementation characteristics will
+necessarily become a part of the consensus rules.  Therefore, this proposal also
+includes several optimizations to the existing non-consensus-enforced filters in
+order to avoid the need for another future vote to incorporate them.
+
+===GCS===
+
+The primary factor that motivated the choice of GCS to provide the desired set
+membership testing for block contents is the excellent balance of overall
+simplicity of implementation and reduced space requirements as compared to bloom
+filters for a given false positive rate.
+
+====Bloom Filter Size Comparison====
+
+Bloom filters<ref>[[https://en.wikipedia.org/wiki/Bloom_filter|Bloom
+filter]]</ref> use roughly the number of bits specified by the following
+approximation where <code>N</code> is the number of items and <code>P</code> is
+the inverse of the false positive rate:
+
+<!--N \times \log_{2}e \times \log_{2}\frac{1}{P}-->
+<img src="bloom_filter_size.svg" height="50" />
+
+While bloom filters are fairly space efficient, the approximation shows the
+usage is approximately <code>log_2(e) ≈ 1.44</code> times larger than the best
+possible information-theoretic value.
+
+For some concrete numbers, a bloom filter that encodes 5000 items with 1 false
+positive every <code>2^20 = 1048576</code> items would be approximately
+<code>5000 * 1.44 * 20 ≈ 144000 bits ≈ 17.58 KiB</code>.
+
+<span id="optimal-gcs-parameters"></span>
+On the other hand, the number of bits of a GCS can be approximated by the
+following equation where <code>N</code> is the number of items, <code>B</code>
+is the number of bits of the remainder code, and <code>M</code> is the inverse
+of the false positive rate:
+
+<!--N\left(B + \frac{1}{1 - e^{-\frac{2^B}{M}}}\right)-->
+<img src="gcs_size.svg" height="64" />
+
+It has traditionally been suggested to set <code>M = 2^B</code>, however
+analysis has shown that suggestion is not optimal.<ref>[[https://gist.github.com/sipa/576d5f09c3b86c3b1b75598d799fc845|Minimizing the redundancy in Golomb Coded Sets]]</ref>
+Minimizing the size for a given false positive rate <code>M</code> yields the
+following equations:
+
+<!--\begin{array}{l} 1 + \frac{2^B}{M}\ln{\sqrt{2}} = \cosh{\frac{2^B}{M}} \implies \frac{2^B}{M} \approx 0.6679416 \\ B \approx log_{2}{M} - 0.5822061 \\ M \approx 1.497137 \times 2^{B} \end{array}-->
+<img src="gcs_size_min.svg" height="115" />
+
+In other words, when the false positive rate is allowed to vary, the choice for
+<code>M</code> that is close to optimal is <code>M = ceil(1.497137 *
+2^B)</code>.
+
+It can further be shown that the approximate GCS size, when tuned to the most
+optimal values, is less than 1.125 times larger than theoretically possible
+versus 1.44 times larger with bloom filters.
+
+Using this information with concrete numbers for comparison to the bloom filter
+values above, a GCS that encodes 5000 items with 1 false positive every
+<code>2^20 = 1048576</code> items and setting <code>B = 19</code> would be
+approximately <code>5000 * 21.54 ≈ 107700 bits ≈ 13.15 KiB</code>.
+
+Further, since the false positive rate is allowed to vary in this application,
+setting <code>M</code> to the near optimal value for <code>B = 19</code> of
+<code>M = 784931</code> further reduces that usage to approximately <code>5000 *
+21.05 ≈ 105250 bits ≈ 12.85 KiB</code>.
+
+====Parameter Analysis With Actual Chain Data====
+
+The following table shows the full size of all version 2 block filters through
+block 382280 resulting from an analysis done with various parameters to ensure
+the results with live data coincide with the theoretical results:
+
+{|
+!B!!M!!Total Size!!Filter/Chain Ratio!!False Positive Downloads!!Effective Size
+|-
+|20||1569862||55.6 MiB||1.625%||14||57.0 MiB
+|-
+|20||2^20||54.4 MiB||1.592%||20||56.4 MiB
+|-
+|19||2^20||54.3 MiB||1.587%||20||56.2 MiB
+|-
+|19||784931||53.1 MiB||1.552%||26||55.6 MiB
+|-
+|18||392465||50.6 MiB||1.479%||53||55.8 MiB
+|}
+
+As can be seen from the data, the parameters <code>B = 19</code> and <code>M =
+784931</code> result in the optimal combination of filter size and overall
+effective bandwidth usage.
+
+It is also important to note that this analysis considers the worst case
+scenario behavior in that it considers every block downloaded due to a false
+positive as wasted bytes when that will only be the case if there is no other
+data in the block that was actually needed.  Larger wallets are much more likely
+to need data from a block even if its download was triggered by a false
+positive.
+
+====Fast Reduction Method====
+
+The method used to uniformly map integers to the required range for the GCS sets
+is more or less equivalent to <code>x mod N</code>.
+
+However, instead of using a mod operation that can lead to slowness on many
+processors when not using a power of two due to unnecessary division, it
+uses a "multiply-and-shift" trick that eliminates all divisions.<ref>[[https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction|A fast alternative to the modulo reduction]]</ref>
+
+The general idea is to multiply by <code>N</code> and shift right by
+<code>log2(N)</code>.  Since <code>N</code> is a 64-bit integer for this
+application, it becomes:
+
+<code>(x * N) / 2^64 == (x * N) >> 64</code>
+
+This is a fair map since it maps integers in the range <code>[0,2^64)</code> to
+multiples of <code>N</code> in <code>[0, N*2^64)</code> and then divides by
+<code>2^64</code> to map all multiples of <code>N</code> in
+<code>[0,2^64)</code> to 0, all multiples of <code>N</code> in <code>[2^64,
+2*2^64)</code> to 1, etc.  It results in either <code>ceil(2^64/N)</code> or
+<code>floor(2^64/N)</code> multiples of <code>N</code>.
+
+==Deployment==
+
+This agenda will be deployed to mainnet using the standard Decred on-chain
+voting infrastructure as follows:
+
+{|
+!Name!!Setting
+|-
+|Deployment Version||7
+|-
+|Agenda ID||headercommitments
+|-
+|Agenda Description||Enable header commitments as defined in DCP0005
+|-
+|Start Time||1567641600 (Sep 5th, 2019 00:00:00 +0000 UTC)
+|-
+|Expire Time||1599264000 (Jan 5th, 2020 00:00:00 +0000 UTC)
+|-
+|Mask||0x06 (Bits 1 and 2)
+|-
+|Choices||{|
+!Choice!!English Description!!Bits
+|-
+|abstain||abstain voting for change||0x00
+|-
+|no||keep the existing consensus rules||0x02 (Bit 1)
+|-
+|yes||change to the new consensus rules||0x04 (Bit 2)
+|}
+|}
+
+==Test Vectors==
+
+The following test vectors are provided in order to facilitate testing across
+implementations.
+
+The test vectors are all provided as JSON so that implementations can easily
+copy them and programmatically parse them to avoid transposition errors.
+
+All hashes in these tests are presented how they are displayed to humans (which
+is as if they were big-endian encoded uint256 numbers) as opposed to their
+internal representation (which is the reverse).
+
+===Combined Merkle Roots===
+
+<pre>
+[
+["Regular Tx Tree Merkle Root, Stake Tx Tree Merkle Root, Expected Combined Merkle Root, Description"],
+["0000000000000000000000000000000000000000000000000000000000000000","0000000000000000000000000000000000000000000000000000000000000000","988c02a849815a2c70d97fd613a333d766bcb250cd263663c58d4f954240996d","both zero"],
+["c867d085c96604812854399bf6df63d35d857484fedfd147759ed94c3cdeca35","0000000000000000000000000000000000000000000000000000000000000000","1ac7b08e89cf9a09aa37cbc6da5ef565387d5ab7e8a405a6bf75a31efb1a6987","stake zero"],
+["4aa7bcd77d51f6f4db4983e731b5e08b3ea724c5cb99d3debd3d75fd67e7c72b","53c5472957646d0b5a33ed482138df8b9212d7c00553fca6929351ec912d9a43","9f5c6658689c627a81f29fd54389a4f4e225d59c72257762b62d19da06f76028","retroactive block 257"],
+["6a37f6c6e7925b011611375ea4bd68aa712770ff9e62fe2291f35d44bfc0da09","ec8ca6b6d79d6643b3eff69c669d590e0217ba783f921d8a747829db4122267c","cbbf08173144d05299380009af546de876fadb5c5a7ca2b865e18c87b97c3e66","retroactive block 258"],
+["928bfdec06342966a27cfa784309cbede715928965c68940fa5b402e4870312d","d159449bfa08efc8f55cce3d0a0c3ce43392907193dd244d0c4a90b210c34e89","223a8a09f339daaec50123ffc9ffcafcd9a0daec7d6574f86874b8dca354c85f","retroactive block 259"],
+["a144c719391569aa20bf612bf5588bce71cd397574cb6c060e0bac100f6e5805","dd45ab0b099fbed6dd4ba8e91488cb10c8928e5a82975b03952094b141a93747","85b49d61a922ae883bb31c8f0064ed9c2550425ffc1bd026a9986102ef34b2ad","retroactive block 260"],
+["5429f4db1794c827a31cf2f25d7e56e6ac8df6adda7be4971c11413dbbd96d53","502b3d79caed7b10c4b982f3bfff6847c052f60af77c2bf3a7b41126c6a140a7","025d2d91dff22afd92d3111541c1c61cde9045f6e7fa04296ec8b12fcf3d5b70","retroactive block 261"],
+["9f3a41320b2c591a47b27bb1379aa7b13462e851977a4a7006b95cfaa0e0bbec","00d0a7c9be36a059d47e5c62b1ac81c9263c4d3d3a9c4221b7f80eb257d60603","8b6d589261aa0d7ede6b719255bf989ee22967faf51af5533337e711abd49ee6","retroactive block 262"],
+["a7bb523ac8ee4cfb39f8ccc9a02281825f7e5d88d6874d5e08724f6bb0ac5083","826c95263cc3c7de75b0503796c96a0072f8e4da5adef8b95eee27654008a77b","f6b7bd7ac6f1d61c6e48ae1e53302ccc84da2f3b7802a09244c2657a203aa9af","single regular tx, single stake tx (from simnet testing)"],
+["b0953c08e873651c5505ff9a1f9d337c258d0719d1951536c1aa379bf7a0d523","ab0c7a1e7fab629ef74f95c09c03172489791b29db064c6e5dffdad3da31c4e0","4d82a32275ef4f9e858fbb88a3b61e6f86fba567d87976e639551d3667b6bca2","two regular txns, two stake txns (from simnet testing)"]
+]
+</pre>
+
+===Inclusion Proof Generation===
+
+<pre>
+[
+["[Leaves], Proof Index, [Proof Hashes], Description"],
+[[], 0, [], "no leaves"],
+[["b4895fb9d0b54822550828f2ba07a68ddb1894796800917f8672e65067696347"], 1, [], "single leaf, leaf index 1 -- out of range"],
+[["b4895fb9d0b54822550828f2ba07a68ddb1894796800917f8672e65067696347"], 0, [], "single leaf, leaf index 0 (left)"],
+[["46670d055dae85e8f9eceb5d30b1433c7232d3b09068fbde4741db3714dafdb7","9518f53fccc008baf771a6610d4ac506a931286b7e67d98d49bde68e3dec10aa"], 1, ["46670d055dae85e8f9eceb5d30b1433c7232d3b09068fbde4741db3714dafdb7"], "2 leaves, leaf index 1 (right)"],
+[["46670d055dae85e8f9eceb5d30b1433c7232d3b09068fbde4741db3714dafdb7","9518f53fccc008baf771a6610d4ac506a931286b7e67d98d49bde68e3dec10aa","c9bf74b6da5a82e5f720859f9b7730aab59e774fb1c22bef534e60206c1f87b4","c0657dd580e76866de1a008e691ffcafe790deb733ec79b7b4dea64ab4abd002","7ce1b2613e21f40d7076c1b2283f363134be992b5fd648a928f023e9cf42de5e"], 2, ["c0657dd580e76866de1a008e691ffcafe790deb733ec79b7b4dea64ab4abd002","7569f8adf70ab7a404a6d691c80d2eb10efd35120c526c8d9c6afc038a88dcf0","b92bb84b19e850458f4eabc098e2990f3931e8b88e9a72a41162e9ae4e2a371a"], "5 leaves, leaf index 2 (left, right, left)"],
+[["46670d055dae85e8f9eceb5d30b1433c7232d3b09068fbde4741db3714dafdb7","9518f53fccc008baf771a6610d4ac506a931286b7e67d98d49bde68e3dec10aa","c9bf74b6da5a82e5f720859f9b7730aab59e774fb1c22bef534e60206c1f87b4","c0657dd580e76866de1a008e691ffcafe790deb733ec79b7b4dea64ab4abd002","7ce1b2613e21f40d7076c1b2283f363134be992b5fd648a928f023e9cf42de5e","2f568d89cde2957d68a27f41854245b73c1469314e7f31783614bf1919761bcf","e146022bebf7a4273a61084ce20ee5c03f94afbe6744ed48e436169a147a1d1c","a714a3a6f16b18c5b82321b9425a4205b205afd4d83d3f392d6a36af4222c9dd","25f65b3814c55de20576d35fc68ecc202bf058352746c9e2347f7e59f5a2c677","81120d7af7f8d37287ecf558a2d47f1e631bec486e485cb4aab4996a1c2ee7ab","0e3e1ffd23240dbc3e148754eb63faa784e9d338f196cf77b5d821749282fb0c","91d53551633e8b7a894b4e7277616f65203e997c4346895d234a8a2dcea6c849","3caf3db1714a8f7c9b847be782ee2750f3f7073eadbc43a309c800a3d6b1c887","41161b6e5cc65bee31a26b1603e5d701151d9778de6cd0044fb5533dd0da7fe7","a1273c356109ff1d6145eca2ed14b1c5025f0024bf18ae249b8d185b4192cf6e","ceed5ebb8faa597795d04fe06c404e32e72d9d6db43d57b41affc842c402a5c8","7c756776f01aa0e2b115bbef0527a12fe03aadf598fdbf99576dc973fbc42cdc","472c27828b8ecd51f038a676aa9dc2e8d144cc292885e342a37852ec6d0d78a7","bbc48709276a223b6689d181aacfd8684fbb5a91bd7c890e487a3b73ab4b43d5","6c796c53a51ecf8fa0dd7feffbf3c1ca277b17533bb6fc87645527471c2d5499","bec32f1016fd40f2adac39dfbcedb3e45b6d7f9b37cb340d22bce14015759632","06024a8ddaafa5c4b448168bebd8f37d7fb15eef079933579cf29b45dd40edfb"], 17, 		["7c756776f01aa0e2b115bbef0527a12fe03aadf598fdbf99576dc973fbc42cdc","dc9ecbcb5c2c5bc167bd2b655d24c2cd3928628762ccf66124be1acae1d375c4","d1c35369f005419c4e0f62778939f5ccfc1a6dad5403b4976b5043cd374d5fc4","74a272f7e786ff653dacdab7e9ec04b5a9eb1228bdf1f379f2b7b467efda8e1f","730ec07e8a5bde0d66aef48e59ccd3588ca7daf50428ef2584827542a6d3f50a"], "22 leaves, leaf index 17 (right, left, left, left, right)"],
+[["46670d055dae85e8f9eceb5d30b1433c7232d3b09068fbde4741db3714dafdb7","9518f53fccc008baf771a6610d4ac506a931286b7e67d98d49bde68e3dec10aa","c9bf74b6da5a82e5f720859f9b7730aab59e774fb1c22bef534e60206c1f87b4","c0657dd580e76866de1a008e691ffcafe790deb733ec79b7b4dea64ab4abd002","7ce1b2613e21f40d7076c1b2283f363134be992b5fd648a928f023e9cf42de5e","2f568d89cde2957d68a27f41854245b73c1469314e7f31783614bf1919761bcf","e146022bebf7a4273a61084ce20ee5c03f94afbe6744ed48e436169a147a1d1c","a714a3a6f16b18c5b82321b9425a4205b205afd4d83d3f392d6a36af4222c9dd","25f65b3814c55de20576d35fc68ecc202bf058352746c9e2347f7e59f5a2c677","81120d7af7f8d37287ecf558a2d47f1e631bec486e485cb4aab4996a1c2ee7ab","0e3e1ffd23240dbc3e148754eb63faa784e9d338f196cf77b5d821749282fb0c","91d53551633e8b7a894b4e7277616f65203e997c4346895d234a8a2dcea6c849","3caf3db1714a8f7c9b847be782ee2750f3f7073eadbc43a309c800a3d6b1c887","41161b6e5cc65bee31a26b1603e5d701151d9778de6cd0044fb5533dd0da7fe7","a1273c356109ff1d6145eca2ed14b1c5025f0024bf18ae249b8d185b4192cf6e","ceed5ebb8faa597795d04fe06c404e32e72d9d6db43d57b41affc842c402a5c8","7c756776f01aa0e2b115bbef0527a12fe03aadf598fdbf99576dc973fbc42cdc","472c27828b8ecd51f038a676aa9dc2e8d144cc292885e342a37852ec6d0d78a7","bbc48709276a223b6689d181aacfd8684fbb5a91bd7c890e487a3b73ab4b43d5","6c796c53a51ecf8fa0dd7feffbf3c1ca277b17533bb6fc87645527471c2d5499","bec32f1016fd40f2adac39dfbcedb3e45b6d7f9b37cb340d22bce14015759632","06024a8ddaafa5c4b448168bebd8f37d7fb15eef079933579cf29b45dd40edfb"], 8, ["81120d7af7f8d37287ecf558a2d47f1e631bec486e485cb4aab4996a1c2ee7ab","f5fdbb6fc248ded76d32a2c476bbda2f71a94ab9e97ab17f9fa6ae54b9678ae2","61ef60d83b8fac54143a425ff701e39f84160945dc6148a72ef21b36463d4055","bb87df9e2104a7b1006bafd20d57b3232713bb98e04a07417ad92068d61d73e0","7655d6fe0c1994489bc8d71b70b40d854607fd8d012c538a103d272611ef69c8"], "22 leaves, leaf index 8 (left, left, left, right, left)"]
+]
+</pre>
+
+===Inclusion Proof Verification===
+
+<pre>
+[
+["Merkle Root, Commitment Root, Proof Index, [Proof Hashes], Validity, Description"],
+["b4895fb9d0b54822550828f2ba07a68ddb1894796800917f8672e65067696347", "b4895fb9d0b54822550828f2ba07a68ddb1894796800917f8672e65067696347", 0, [], true, "single leaf, leaf index 0 (left)"],
+["b4895fb9d0b54822550828f2ba07a68ddb1894796800917f8672e65067696347", "b4895fb9d0b54822550828f2ba07a68ddb1894796800917f8672e65067696347", 1, [], false, "single leaf, leaf index 1 (right) -- leaf out of range for proof"],
+["7569f8adf70ab7a404a6d691c80d2eb10efd35120c526c8d9c6afc038a88dcf0", "9518f53fccc008baf771a6610d4ac506a931286b7e67d98d49bde68e3dec10aa", 1, ["46670d055dae85e8f9eceb5d30b1433c7232d3b09068fbde4741db3714dafdb7"], true, "2 leaves, leaf index 1 (right)"],
+["7569f8adf70ab7a404a6d691c80d2eb10efd35120c526c8d9c6afc038a88dcf1", "9518f53fccc008baf771a6610d4ac506a931286b7e67d98d49bde68e3dec10aa", 1, ["46670d055dae85e8f9eceb5d30b1433c7232d3b09068fbde4741db3714dafdb7"], false, "2 leaves, leaf index 1 (right) -- mismatched root"],
+["7569f8adf70ab7a404a6d691c80d2eb10efd35120c526c8d9c6afc038a88dcf0", "9518f53fccc008baf771a6610d4ac506a931286b7e67d98d49bde68e3dec10aa", 1, ["46670d055dae85e8f9eceb5d30b1433c7232d3b09068fbde4741db3714dafdb7","46670d055dae85e8f9eceb5d30b1433c7232d3b09068fbde4741db3714dafdb7"], false, "2 leaves, leaf index 1 (right) -- mismatched proof size with duplicate"],
+["7569f8adf70ab7a404a6d691c80d2eb10efd35120c526c8d9c6afc038a88dcf0", "9518f53fccc008baf771a6610d4ac506a931286b7e67d98d49bde68e3dec10aa", 1, ["46670d055dae85e8f9eceb5d30b1433c7232d3b09068fbde4741db3714dafdb6"], false, "2 leaves, leaf index 1 (right) -- mismatched proof hash"],
+["0b2eb5d6213d6faa732578212aabf3f6e0b73853eb9cc753d2915473b14c4d0f", "c9bf74b6da5a82e5f720859f9b7730aab59e774fb1c22bef534e60206c1f87b4", 2, ["c0657dd580e76866de1a008e691ffcafe790deb733ec79b7b4dea64ab4abd002","7569f8adf70ab7a404a6d691c80d2eb10efd35120c526c8d9c6afc038a88dcf0","b92bb84b19e850458f4eabc098e2990f3931e8b88e9a72a41162e9ae4e2a371a"], true, "5 leaves, leaf index 2 (left, right, left)"],
+["0b2eb5d6213d6faa732578212aabf3f6e0b73853eb9cc753d2915473b14c4d0f", "c9bf74b6da5a82e5f720859f9b7730aab59e774fb1c22bef534e60206c1f87b4", 3, ["c0657dd580e76866de1a008e691ffcafe790deb733ec79b7b4dea64ab4abd002","7569f8adf70ab7a404a6d691c80d2eb10efd35120c526c8d9c6afc038a88dcf0","b92bb84b19e850458f4eabc098e2990f3931e8b88e9a72a41162e9ae4e2a371a"], false, "5 leaves, leaf index 2 (left, right, left) -- wrong index"],
+["0b2eb5d6213d6faa732578212aabf3f6e0b73853eb9cc753d2915473b14c4d0f", "c9bf74b6da5a82e5f720859f9b7730aab59e774fb1c22bef534e60206c1f87b4", 2, ["c0657dd580e76866de1a008e691ffcafe790deb733ec79b7b4dea64ab4abd002","7569f8adf70ab7a404a6d691c80d2eb10efd35120c526c8d9c6afc038a88dcf0"], false, "5 leaves, leaf index 2 (left, right, left) -- short proof"],
+["0b2eb5d6213d6faa732578212aabf3f6e0b73853eb9cc753d2915473b14c4d0f", "c9bf74b6da5a82e5f720859f9b7730aab59e774fb1c22bef534e60206c1f87b4", 2, ["c0657dd580e76866de1a008e691ffcafe790deb733ec79b7b4dea64ab4abd002","b92bb84b19e850458f4eabc098e2990f3931e8b88e9a72a41162e9ae4e2a371a","7569f8adf70ab7a404a6d691c80d2eb10efd35120c526c8d9c6afc038a88dcf0"], false, "5 leaves, leaf index 2 (left, right, left) -- proof levels swapped"],
+["4aa7bcd77d51f6f4db4983e731b5e08b3ea724c5cb99d3debd3d75fd67e7c72b", "472c27828b8ecd51f038a676aa9dc2e8d144cc292885e342a37852ec6d0d78a7", 17, ["7c756776f01aa0e2b115bbef0527a12fe03aadf598fdbf99576dc973fbc42cdc","dc9ecbcb5c2c5bc167bd2b655d24c2cd3928628762ccf66124be1acae1d375c4","d1c35369f005419c4e0f62778939f5ccfc1a6dad5403b4976b5043cd374d5fc4","74a272f7e786ff653dacdab7e9ec04b5a9eb1228bdf1f379f2b7b467efda8e1f","730ec07e8a5bde0d66aef48e59ccd3588ca7daf50428ef2584827542a6d3f50a"], true, "22 leaves, leaf index 17 (right, left, left, left, right)"],
+["4aa7bcd77d51f6f4db4983e731b5e08b3ea724c5cb99d3debd3d75fd67e7c72b", "25f65b3814c55de20576d35fc68ecc202bf058352746c9e2347f7e59f5a2c677", 8, ["81120d7af7f8d37287ecf558a2d47f1e631bec486e485cb4aab4996a1c2ee7ab","f5fdbb6fc248ded76d32a2c476bbda2f71a94ab9e97ab17f9fa6ae54b9678ae2","61ef60d83b8fac54143a425ff701e39f84160945dc6148a72ef21b36463d4055","bb87df9e2104a7b1006bafd20d57b3232713bb98e04a07417ad92068d61d73e0","7655d6fe0c1994489bc8d71b70b40d854607fd8d012c538a103d272611ef69c8"], true, "22 leaves, leaf index 8 (left, left, left, right, left)"],
+["f2682e75fb36735a965169671a2cda5ce0dca5d34e7a71a0255781d8ccdd9155", "0000000000000000000000000000000000000000000000000000000000000000", 0, ["0000000000000000000000000000000000000000000000000000000000000000","988c02a849815a2c70d97fd613a333d766bcb250cd263663c58d4f954240996d","5fdfcaba377aefc1bfc4af5ef8e0c2a61656e10e8105c4db7656ae5d58f8b77f","374ae868dea15cd26b7a963c23ed5eabd09a361e491dd0b4359cef9078db2612","02503fdaf30601ca55183134deb8d0df012bb28d2544dae6aa39d75a5f37740f","6273a34be042fdb32477b70d05a90e25e351191b3f7a869fbfb44a880f47b6ec","03c50400f76d9fa64241d14fc288bef9e4c5ae66c003dbc70df4dc57d6b96c0b","a6c1bc00485da825b5b13e0675409f80e0c24b08a1a07f38da6f706552d21b32","56519f6d6433322d53a1c5889dcd93efc393953a3e0461ee2b545304e40b57d2","8925459f64abe6f3645f309e77053a4fd8cbb7898f30424af3e42b606c1c0fca","aee95263260480b9f26d40c34842da23cb1a0f524ec1a43da3412e1e2754549c","760830968eddea4fddf83d992a692f3fcc334b9a161d794aad8cca33d85aa6f9","5735cff4b10f91199d43810ade02d519a001af3aa7459aba5d80beb5fc34e2b9","cce5f54ff1edd7b7531e0345eb0fa11af3a3f5ad4ff5188c4834ec81319840e1","abd1c7bb7ad9ac1753ccde2ed8242a8b7161d0fc10730a3ef441f544efc98107","f213cfd7654de64c33ef5e554b52f368536e9cd2034a139ac902e7f095a9fb58","777c160f13135e3c9bab7b86661a5578cdc24619ef9d2427fff0e06d349ca0eb","80ce43b82f615e92ee2bd490d982a29cfa9ed98fea9163b5d2f2b5160a3a3cdb","cca63a10e3a704118243efdc17b495295b6a32dc79c138638fdcb12a0feda7dc","42041b6c9ed759ec930ba87d98ad3d759ad97c97594fe1d920d5c33ab91c87b9","cfc48c8f48165c210d1bd782d981061680fcc79933978811f0ec85ce531e5f2b","72a2cc56cbca8657dcdf507a215e61d5edefa24994ede210679106add926290e","4d3091070e17c168d5c34ec83c222f807eee2d2b82c815b6b07362d7c5d2ccf1","10e554152a3a82c404d737d7ee17929686ed2fb712056ae8e1b37a71eb5948e4","47c20cae4fe406f8df87bb23d1ee934419b7ec30722ce436441e6934a9b400ea","f4953fd6b1991dee8fecab3af18a9040a0094fc812d0be9f6c802c6b1a9d6168","15b49c4a69f150e939317a8d2bf1e73c9e306472d71da4b8bda51ed8662ae4da","050d750ef19652e6f24f73477a253bb829802625c0be2645f2ec58e46beb7519","7cac89d3a7264f4eaa35fb046ba4dc224114cc2fff7fd8534555f2a4c3f0e551","e114da8bb3a5e82345c057f51097b54fb6e13109c3453b6662be2fc552a343d1","0929a39e420eaea3faa4ca63c285e4d37c2f8b1237e7c0dac20b1b7b69a1ce0d","f996730f1f0df0bfa587ab506cf2e59f1cec428ca341238d9425f0b44a51df52","fff2777d79bcfb111b904ea414e3ed65e424b111e1d7729d39fc657b50743c96"], false, "2^32+1 leaves, leaf index 0 -- proof size greater than max"]
+]
+</pre>
+
+===Commitment Roots===
+
+<pre>
+[
+["[Commitment Hashes], Expected Commitment Root"],
+[["af7d2082aa44d453590d018a4a15592ea9c6bd1980fefe8bd4c848d78c5fec64"], "af7d2082aa44d453590d018a4a15592ea9c6bd1980fefe8bd4c848d78c5fec64"],
+[["df9376f3ffaf0d222b65cad30c9366d8951bbe95041f504e235f1165ba453ba8","71b86e9ab9c7d07b92a45af54a21211e20b40d4265a09c5e687fd24dd34edb74"], "fc57e6f304d247bb22409f4448e44dddd5de1a53bd4e7f22761ad9dab40d156f"],
+[["c529ada4e095aebb5d1224650cc28e24ca8865cde49495ba0d53c96c1f195baf","efdecfd1114790cbd147f4a015422636445460298288313127bdb973a2cc7b7c", "cb8bf58bd986530c370ebad8605fc19d8e2599c39c9df8848046bd8b141b937e"], "06f33eb6ae7a793961295f4c7b997a2393a71a9fd37e7fe71d8187962aaa5277"]
+]
+</pre>
+
+==Compatibility==
+
+This is a hard-forking change to the Decred consensus.  This means that once
+the agenda is voted in and becomes locked in, anybody running code that fully
+validates blocks must upgrade before the activation time or they will risk
+rejecting a chain containing a transaction that is invalid under the old rules.
+
+Other software that performs full validation will need to modify their consensus
+enforcement rules accordingly and any software that makes use of the current
+<code>MerkleRoot</code> or <code>StakeRoot</code> header fields will need to be
+updated to handle the changes specified herein.
+
+The existing uncommitted version 1 block filters will still be available for the
+time being to provide a smooth transition for existing software.  However,
+lightweight clients SHOULD update to version 2 block filters as soon as possible
+since version 1 block filters are now deprecated.
+
+==Reference Implementation==
+
+===GCS Implementation===
+
+A reference implementation of the required variant of Golomb-coded sets used to
+build the version 2 block filters is implemented by the
+[[https://github.com/decred/dcrd/tree/gcs/v2.0.0/gcs|gcs package]].
+
+===Pull Requests===
+
+====Version 2 Block Filters====
+
+A reference implementation of the required version 2 block filters is
+implemented by [[https://github.com/decred/dcrd/pull/1906|pull request #1906]].
+
+====Consensus Enforcement====
+
+A reference implementation of enforcing the new semantics in accordance with the
+results of the agenda vote is implemented by
+[[https://github.com/decred/dcrd/pull/1906|pull request #1906]].
+
+====Deployment====
+
+A reference implementation of the required agenda definition is implemented by
+[[https://github.com/decred/dcrd/pull/1904|pull request #1904]].
+
+==Acknowledgements==
+
+Thanks to Josh Rickmar ([[https://github.com/jrick|@jrick]]) and Matheus
+Degiovani ([[https://github.com/matheusd|@matheusd]]) for helpful
+discussions regarding many of the design details.
+
+Some parts of this proposal are loosely based on sections from
+[[https://github.com/bitcoin/bips/blob/master/bip-0158.mediawiki|BIP158]].  A
+special thanks goes to its authors (alphabetical order):
+
+* Alex Akselrod
+* Olaoluwa Osuntokun
+
+===Collaborators===
+
+Thanks to the following individuals who provided valuable feedback during the
+review process of this proposal (alphabetical order):
+
+* degeri ([[https://github.com/degeri|@degeri]])
+* Donald Adu-Poku ([[https://github.com/dnldd|@dnldd]])
+* Jake Yocom-Piatt
+* Jamie Holdstock ([[https://github.com/jholdstock|@jholdstock]])
+* Jonathan Chappelow ([[https://github.com/chappjc|@chappjc]])
+* Josh Rickmar ([[https://github.com/jrick|@jrick]])
+* Matheus Degiovani ([[https://github.com/matheusd|@matheusd]])
+* Seth Benton ([[https://github.com/s-ben|@s-ben]])
+
+==References==
+
+===Inline References===
+
+<references/>
+
+===Additional References===
+
+# [[https://proposals.decred.org/proposals/0a1ff846ec271184ea4e3a921a3ccd8d478f69948b984445ee1852f272d54c58|Politeia Proposal - Block Header Commitments Consensus Change]]
+# [[https://giovanni.bajo.it/post/47119962313/golomb-coded-sets-smaller-than-bloom-filters|Golomb-coded sets: smaller than Bloom filters]]
+
+==Copyright==
+
+This document is licensed under the
+[https://creativecommons.org/publicdomain/zero/1.0 CC0-1.0: Creative Commons CC0 1.0 Universal]
+license.
+
+The code is licensed under the [https://opensource.org/licenses/ISC ISC License].

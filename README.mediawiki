@@ -1,4 +1,4 @@
-<img src="./readme-imgs/decredlogo.png" />
+<img src="./readme-imgs/dcps_logo.png" />
 
 ==Decred Change Proposals==
 

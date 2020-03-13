@@ -38,5 +38,5 @@ should be performed.
 |-
 |[[./dcp-0004/dcp-0004.mediawiki|0004]]||Fix LN Sequence Locks View||Active
 |-
-|[[./dcp-0005/dcp-0005.mediawiki|0005]]||Block Header Commitments||Defined
+|[[./dcp-0005/dcp-0005.mediawiki|0005]]||Block Header Commitments||Active
 |}

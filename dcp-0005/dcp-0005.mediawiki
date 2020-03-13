@@ -2,7 +2,7 @@
 DCP: 0005
 Title: Block Header Commitments
 Author: Dave Collins <davec@decred.org>
-Status: Defined
+Status: Active
 Created: 2019-10-05
 License: CC0-1.0
 License-Code: ISC

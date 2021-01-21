@@ -1,0 +1,403 @@
+<pre>
+DCP: 0006
+Title: Decentralized Treasury
+Author: Marco Peereboom <marco@decred.org>
+Status: Defined
+Created: 2020-09-18
+License: CC0-1.0
+License-Code: ISC
+</pre>
+
+==Abstract==
+
+This document specifies modifications to the Decred treasury to make it a more
+decentralized process.
+
+The main changes are:
+
+* Move multisig unsigned transaction output (UTXO) based <code>treasury address</code> to a treasury account that can only be debited when Decred stakeholders agree to it.
+* Credit development subsidy to treasury account every block.
+* Add three new opcodes: <code>OP_TADD</code>, <code>OP_TSPEND</code>, and <code>OP_TGEN</code>.
+* The aforementioned opcodes are then in turn used to construct three new types of stake transactions:
+*# <code>Treasurybase</code> transaction - treasury subsidy in every block.
+*# <code>Treasury add</code> transactions - method to credit the treasury account.
+*# <code>Treasury spend</code> transactions - method to debit the treasury account.
+
+==Motivation==
+
+Spending from the Decred treasury is a manual process that is executed and
+governed by humans. The current process requires contractors to each produce a
+monthly invoice with a reimbursement report, denominated in USD, that is
+submitted to the project treasury auditors. If the invoice is approved a payout
+is made to the contractor-provided address from the treasury funds, using an
+averaged DCR/USD exchange rate over the month the invoice applies to. These
+payouts are made by Decred Holdings Group LLC ("DHG" for short), a
+conventional corporate entity which holds the treasury funds.  This is
+undesirable for various reasons, such as
+
+* Sovereignty over treasury spends is not vested in the stakeholders.
+* Risk of theft of funds.
+* Risk of key project members abandoning the project.
+* Risk of coercion being used against key project members.
+* Process of treasury spending is insufficiently transparent.
+
+The proposed solution will semi-automate the release of treasury funds while
+diminishing the influence of key project members over treasury spending.
+
+==Process==
+
+Currently, every block that is mined must include a <code>coinbase</code> transaction that
+generates a UTXO of a specific amount that requires a 2-of-3 multisig to spend.
+This is enforced by consensus. During payout time, DHG creates and signs
+transactions to all payees. This process is not adequate to support the
+features proposed in this DCP.
+
+Essentially, the treasury is converted from a UTXO based model to an account
+based model. The account balance is determined by starting with an initial
+balance of zero followed by state changes that are recorded on the blockchain.
+This process "burns" and "creates" UTXOs as needed. Sending UTXOs to the
+treasury burns the coins and adds value to the treasury account and spending
+from the treasury creates UTXOs.  This process is analogous to the ticket
+purchases and redeems. The treasury changes shall be added to the staking
+mechanism. The stake tree was selected for these changes because the coin burn
+and creation is analogous to the consensus voting mechanism. Additionally, the
+treasury votes are added as optional data to <code>OP_SSGEN</code> so that
+voting can happen simultaneously.
+
+This DCP introduces three distinct new processes.
+# Subsidy generation for the Treasury is now accomplished by a new <code>treasurybase</code> stake transaction type which MUST be the first entry in the stake transaction tree as opposed to the <code>coinbase</code> of the regular transaction tree.
+# Crediting the Treasury from existing UTXOs is handled by a new <code>treasury add</code> stake transaction type that burns the UTXO(s) and credits the Treasury account accordingly.  This is analogous to purchasing a ticket.
+# Spending treasury funds now requires stakeholders to vote on the expenditure. The Politeia (or Pi) key operators create a <code>treasury spend</code> transaction and sign it.  This transaction is then broadcast onto the network where it enters the <code>mempool</code>.  Voting wallets are expected to detect this transaction and vote <code>Yes</code> or <code>No</code> on the expenditure based on stakeholder preference via the existing <code>vote</code> stake transactions.  The <code>treasury spend</code> transaction is not valid until enough <code>Yes</code> votes are cast by the stakeholders at which point it is included in a block thereby finalizing the payouts.
+
+==Specification==
+
+The following section details the new transaction types.  All new
+transactions shall be part of the stake tree and all treasury opcodes shall be
+rejected if used in scripts in the regular tree.
+
+===Treasurybase===
+
+The newly introduced <code>treasurybase</code> moves the developer subsidy from
+the <code>coinbase</code> transaction to its own transaction in the stake tree. The
+<code>treasurybase</code> transaction shall be the first transaction in the
+stake tree.  There shall be no more than one <code>treasurybase</code>
+transaction per block. The developer subsidy shall credit the treasury account
+in full unlike the current implementation which credits a proportion based on
+the number of tickets included in the block.
+
+A <code>treasurybase</code> transaction is identified by the following characteristics:
+* The wire message transaction version shall be 3.
+* One transaction input that shall *NOT* have a signature script.
+* All transaction output scripts shall be version 0.
+* There must be two transaction output scripts.
+** transaction output 0 script must be <code>OP_TADD</code>.
+** transaction output 1 shall be an <code>OP_RETURN</code> followed by a twelve-byte data push <code>OP_DATA_12</code> and corresponding data for its script.
+* The previous transaction output point shall be null.
+
+{|
+!Transaction!!Script!!Description
+|-
+|transaction input 0||No script||Stakebase and value shall be exact development subsidy.
+|-
+|transaction output 0||OP_TADD||Value shall be exact development subsidy.
+|-
+|transaction output 1||OP_RETURN<br>OP_DATA_12<br>{LE encoded height}<br>{random}||Block height shall be little endian encoded.
+|}
+
+Additional consensus enforced characteristics:
+
+Note that some rules have been enforced prior the ones listed but out of an
+abundance of caution some tests are repeated in places where it makes sense.
+This is normal and desired.
+
+* First transaction of the stake tree shall be a <code>treasurybase</code>.
+* There shall be only one <code>treasurybase</code> transaction in the stake tree.
+* The previous out point for transaction input 0 shall be null.
+* The <code>treasurybase</code> transaction fraud proof shall be null.
+* The length of the signature script of transaction input 0 shall be zero.
+* The <code>treasurybase</code> transaction shall have more than 1 outputs.
+* The <code>treasurybase</code> transaction output 1 script version shall be 0.
+* The length of transaction output 1 script shall be 14 bytes and consist of an <code>OP_RETURN</code>, <code>OP_DATA_12</code> followed by 12 bytes. The block height where this <code>treasurybase</code> is included shall be little endian encoded in the first four bytes following the <code>OP_DATA_12</code> opcode.
+
+Additional consensus subsidy checks:
+* The number of <code>treasurybase</code> output scripts shall be 2.
+* The version of transaction output 0 script shall be 0.
+* The length of transaction output 0 script shall be 1 and the script shall be <code>OP_TADD</code>.
+* The treasury subsidy shall be calculated based on the height and verified to be correct in the transaction. One notable difference is that the treasury subsidy is NOT divided by the number of votes on the block. This is the only difference from the original <code>coinbase</code> subsidy calculation.
+
+Changes to <code>coinbas</code>e:
+* Coinbase shall no longer carry the treasury subsidy transaction at transaction output 0.
+* Coinbase transaction version shall be 3.
+* The treasury subsidy value is subtracted from transaction input 0 value. An important and intended consequence of this is that disapproved blocks no longer remove the per-block treasury payout.
+
+===Credit treasury===
+
+A user can send funds to the treasury for various reasons. A few examples are
+* Moving old treasury balance to new treasury account.
+* Returning funds due to overpayment.
+* Donations to the Decred project.
+
+A <code>treasury add</code> transaction is identified by the following characteristics:
+* The wire message transaction version shall be 3.
+* There shall be at least one transaction input script.
+* There shall be one or two transaction output scripts.
+* All transaction output scripts shall be version 0.
+* transaction output 0 script must be <code>OP_TADD</code>.
+* transaction output 1 is optional if there is no change. If there is change it shall be a default <code>OP_SSTXCHANGE</code> script.
+
+{|
+!Transaction!!Script!!Description
+|-
+|transaction input 0..N||Default UTXO scripts||Normal UTXO scripts as you would find on normal transactions.
+|-
+|transaction output 0||OP_TADD||Value shall be what is credited to the treasury.
+|-
+|transaction output 1||OP_SSTXCHANGE||Optional if there is no change.
+|}
+
+Additional consensus enforced characteristics:
+* A <code>treasury add</code> transaction shall not have a zero value for change.
+* There shall be no more than twenty <code>treasury add</code> transactions per block.
+
+===Treasury Expenditure Voting===
+
+Voting on valid <code>treasury spend</code> transactions is done by piggy-backing on consensus
+voting transactions. The treasury votes are optionally appended to the
+consensus vote.
+
+A treasury vote is identified by the following characteristics:
+* The consensus vote format shall remain identical to the pre decentralized treasury agenda activation save for one additional optional output.
+* When <code>treasury spend</code> votes are appended the version of the transaction shall be 3.
+* The optional <code>treasury spend</code> vote output shall be the last output of the transaction.
+* The optional <code>treasury spend</code> vote output shall be a valid null script.
+* The null script shall be an <code>OP_RETURN</code> followed by a data push and the first two bytes of the data push shall be <code>TV</code> (or in hex 0x54,0x56).
+* The remainder of the data length shall be 0 modulo of 32+1 (<code>treasury spend</code> transaction hash + vote)
+* A <code>treasury spend</code> transaction hash shall only occur once.
+* The vote shall be either <code>Yes = 0x01</code> or <code>No = 0x02</code> and all other values shall be rejected. This means the entire consensus vote shall fail.
+
+Since the format of the transaction remained the same only the optional data is
+described in the following tables. Note that there are two valid formats based
+on the number of <code>treasury spend</code> votes that are occurring simultaneously.
+
+Format 1
+{|
+!Transaction!!Script!!Description
+|-
+|transaction output N-1||<code>OP_RETURN</code><br><code>OP_DATA_XX</code><br><code><code>TV</code></code><br><code>treasury vote...</code>||Up to two (2) treasury votes can be encoded using this format.
+|}
+
+Format 2
+{|
+!Transaction!!Script!!Description
+|-
+|transaction output N-1||<code>OP_RETURN</code><br><code>OP_PUSHDATA1</code><br>data length<br><code>treasury vote...</code>||Up to seven (7) treasury votes can be encoded.
+|}
+
+Treasury vote
+{|
+!Transaction!!Script!!Description
+|-
+|transaction output N-1||<code>treasury spend</code> transaction hash<br>byte vote bits||Yes vote = 0x01<br>No vote = 0x02<br>All other values shall be rejected rendering the overall transaction invalid.
+|}
+
+
+===Debit treasury===
+
+The <code>treasury spend</code> transactions are rather complex and some additional definitions need
+to be made prior to explaining the format.
+
+Required chain configuration parameters:
+* Treasury Vote Interval, or TVI, determines in which blocks a <code>treasury spend</code> may occur. A block is considered on a TVI when the block height modulo TVI is equal to zero.
+* Treasury Vote Interval Multiplier, or TVIM, dictates the total duration (total duration = TVI * TVIM) where votes for or against the expenditure are considered valid.
+* Treasury Vote Quorum Multiplier and Divisor, TVQM, and TVQD respectively, are used to calculate the required number of votes to reach quorum.
+* Treasury Vote Required Multiplier and Divisor, TVRM and TVRD respectively, are used to calculate the required number of Yes votes.
+* Treasury Expenditure Policy, or TEP, determines the overall duration where all treasury expenditures are summed and averaged.
+* Treasury Expenditure Window, or TEW, is used to calculate the window that is used to verify that the sum of all <code>treasury spend</code> does not exceed ~150% of the average treasury spending.
+* Treasury Expenditure Bootstrap, or TEB, is used to determine a baseline expenditure in order to bootstrap treasury payouts.
+* Politeia Keys, or PiKeys, are a number of well-known secp256k1 public keys that are allowed to sign <code>treasury spend</code> transactions.
+
+Only the Pi key administrator can author transactions that debit the treasury
+account and generate UTXOs for recipients.
+
+The life-cycle of a <code>treasury spend</code> transaction is as follows
+# PiKey administrator creates a <code>treasury spend</code> transaction with an Expiry in the future.
+# The <code>treasury spend</code> is signed and broadcast to the network.
+# If the <code>treasury spend</code> is nominally valid (Expiry in the future, valid signature, valid public key etc) it is allowed in the mempool.
+# Once the <code>treasury spend</code> hits the mempool wallets will be notified.
+# Voting wallets with a voting policy will start voting either yes/no or abstain at the <code>treasury spend</code> vote window start.
+# Votes are accumulated every block. It is possible for a vote to be "short-circuited" if the outcome is already determined on a TVI block before the end of the voting interval. If an insurmountable tally of yes votes is reached, the <code>treasury spend</code> is added to the TVI block. If an insurmountable tally of no votes is reached, the <code>treasury spend</code> is removed from the mempool on the TVI block.
+# At the end of the <code>treasury spend</code> window (which is always on a TVI because start is zero based) votes are tallied and if quorum and yes votes breach their respective thresholds the <code>treasury spend</code> transaction is added to the block.
+# If the <code>treasury spend</code> transaction does not make it into a block on the final TVI in the window the Expiry will force it from the mempool on the next block.
+
+A <code>treasury spend</code> transaction voting window and validity is completely calculated from
+the Expiry field. The Expiry shall always be any TVI+2. This odd number is
+emergent from the handling of Expiry in the mempool. A transaction is expired
+from the Mempool one block prior to the actual Expiry. Thus in order for the
+Tspend transaction to not get evicted from the mempool on the last possible TVI
+the Expiry must be set to +2.
+
+The start of a <code>treasury spend</code> transaction voting window is calculated as follows: Expiry -
+(TVI*TVIM) - 2.
+The end of a <code>treasury spend</code> transaction voting window is calculated as follows: Expiry
+- 2.
+A <code>treasury spend</code> transaction is considered "inside the window" when the block height >=
+start and block height <= end. The end parameter is inclusive for allowing a
+<code>treasury spend</code> in a block however it is exclusive for allowing votes on the <code>treasury spend</code> that
+may end up being allowed on the block.
+
+A <code>treasury spend</code> transaction is identified by the following characteristics:
+
+* The wire message transaction version shall be 3.
+* There shall be one input script.
+* There shall be at least two output scripts.
+* All output scripts shall be version 0.
+* transaction input 0 signature script shall be exactly 100 bytes in length. The script format is <code>OP_DATA_64</code> (signature), <code>OP_DATA_33</code> (Pi public key) followed by an <code>OP_TSPEND</code>.
+** The Pi public key that is included in transaction input 0 shall be of the strict compressed public key encoding type.
+* transaction output 0 script shall be an <code>OP_RETURN</code> <code>OP_DATA_32</code>.
+* transaction output 1..N scripts shall be an <code>OP_TGEN</code> followed by a P2PKH or a P2SH script.
+
+{|
+!Transaction!!Script!!Description
+|-
+|transaction input 0||OP_DATA_64 signature<br>OP_DATA_33 Pi public key<br>OP_TSPEND||The value shall be sum(expenditures) + mining fee.
+|-
+|transaction output 0||OP_RETURN<br>OP_DATA_32||Bytes that make the entire transaction unique. First 8 bytes are the little endian encoded value from transaction input 0. The following 24 bytes are random.
+|-
+|transaction output 1..N||OP_TGEN<br>P2PKH or P2SH script||These are the individual payouts from the treasury account.
+|}
+
+Additional consensus enforced characteristics:
+* The previous out point for transaction input 0 shall be null.
+* The <code>treasury spend</code> transaction fraud proof shall be null.
+* The length of the signature script in transaction input 0 shall be 100 bytes ([OP_DATA_64] [signature] [OP_DATA_33] [PiKey] [OP_TSPEND] = 1 + 64 + 1 + 33 + 1 = 100)
+* A <code>treasury spend</code> transaction shall not be allowed in a block that is not a TVI.
+* A <code>treasury spend</code> transaction shall not be allowed in a block if the start of the voting window is prior to stake validation height.
+* A <code>treasury spend</code> transaction shall not be allowed in a block if the Expiry is outside of the <code>treasury spend</code> validity window.
+* The value of input 0 of a <code>treasury spend</code> transaction shall be int64 little endian encoded in the output 0 script in bytes 2 through 10. The value of both shall be identical.
+* A <code>treasury spend</code> transaction shall not be allowed in a block if it has been mined in a prior block (this is to enable support for short-circuiting a vote) that is in the chain of ancestors.
+* A <code>treasury spend</code> transaction shall not be allowed in a block if it does not reach quorum which is calculated as follows:
+** <code>MaxPossibleTSpendVotes = TicketsPerBlock * TVI *TVIM</code>
+** <code>MinRequiredVotes = MaxPossibleTSpendVotes * TVQM / TVQD</code>
+** <code>sum(yes votes) + sum (no votes) >= MinRequiredVotes</code>
+* A <code>treasury spend</code> transaction shall not be allowed in a block if it does not reach enough yes votes  which is calculated as follows: (sum(votes cast) + sum(possible remaining votes)) * TVRM / TVRD
+* A <code>treasury spend</code> transaction shall not deplete the entire treasury. The treasury balance shall not become negative.
+* The sum of all <code>treasury spend</code> transactions within the most recent TPE shall not exceed 150% of avg(sum(<code>treasury spends</code>), TEW).
+* A <code>treasury spend</code> transaction shall not be allowed in a block if the secp256k1 public key is not well-known (encoded in chain parameters).
+* A <code>treasury spend</code> transaction shall not be allowed in a block if the Schnorr signature of the transaction does not match the provided well-known public key. The <code>treasury spend</code> transaction hash shall be calculated via the <code>SigHashAll</code> method.
+
+===Treasury Account Balance===
+
+All treasury funds in or out are subject to <code>coinbase</code> maturity rules and thus
+the current treasury account balance is determined by adding the sum of all
+additions and subtractions from the treasury account as of <code>coinbase</code> maturity
+blocks ago.
+
+The treasury account balance shall remain 0 until the treasury agenda is voted
+in and the block height reaches activation height + <code>coinbase</code> maturity. Only at
+that point are any additions and subtractions possible.
+
+===Mempool===
+
+In order to allow <code>treasury spend</code> transactions into the mempool some modifications have to
+be made.
+
+* A <code>treasurybase</code> transaction shall not be allowed in the mempool.
+* There shall not be more than seven (7) concurrent <code>treasury spend</code> transactions in the mempool.
+* A <code>treasury spend</code> transaction shall not be allowed in the mempool prior to stake validation height.
+* A <code>treasury spend</code> transaction shall not be allowed in the mempool if the Expiry is farther than 2*TVI*TVIM block height away.
+* A <code>treasury spend</code> transaction shall not be allowed in the mempool if the Expiry is not exactly on a TVI+2.
+* A <code>treasury spend</code> transaction shall not be allowed in the mempool if the PiKey in input 0 is not well known.
+* A <code>treasury spend</code> transaction shall not be allowed in the mempool if the signature in input 0 was not signed with the PiKey in input 0.
+* A <code>treasury spend</code> transaction shall not be allowed in the mempool if it was mined in an ancestor block.
+
+===Version 2 Block Filters Modifications===
+
+It is possible to modify V2 instead of introducing V3 because nothing changes
+from the viewpoint of the wallet and treasury opcodes are disallowed prior to
+agenda activation.
+
+* All <code>treasury spend</code> transaction output scripts that are tagged with <code>OP_TGEN</code> shall be added to the filter.
+* All valid <code>treasury add</code> regular transaction inputs shall be added to the filter.
+* All valid <code>treasury add</code> stake transaction inputs shall be added to the filter.
+* <code>treasury add</code> stake change shall be added to the filter.
+
+
+===Chain parameters===
+
+The following blockchain parameters were added:
+
+* Politeia key #1: 03f6e7041f1cf51ee10e0a01cd2b0385ce3cd9debaabb2296f7e9dee9329da946c
+* Politeia key #2: 0319a37405cb4d1691971847d7719cfce70857c0f6e97d7c9174a3998cf0ab86dd
+* Treasury Vote Interval, or TVI: 288 blocks (~1 day)
+* Treasury Vote Interval Multiplier, or TVIM: 12 (~7.2 days for short circuit approval; up to 42% of the target-ticket-pool tickets can participate in the vote (if it doesn't short-circuit)
+* Treasury Expenditure Window, or TEW: 2 (sum of <code>treasury spends</code> within any ~24 day window cannot exceed policy check)
+* Treasury Expenditure Policy, or TEP: 6 (policy check is average of prior ~4.8 months + a 50%  increase allowance)
+* Treasury Expenditure Bootstrap, or TEB: 16000 * 1e8 (16000 DCR/TEW as expense bootstrap)
+* Treasury Vote Quorum Multiplier, or TVQM: 1 (20% quorum required)
+* Treasury Vote Quorum Divisor, or TVQD: 5
+* Treasury Vote Required Multiplier, or TVRM: 3 (60% yes votes required)
+* Treasury Vote Required Divisor, or TVRD: 5
+
+==Compatibility==
+
+This is a hard-forking change to the Decred consensus.  This means that once
+the agenda is voted in and becomes locked in, anybody running code that fully
+validates blocks must upgrade before the activation time or they will risk
+rejecting a chain containing the various treasury transactions and accompanying
+consensus changes that are valid under the new rules but invalid under the old
+rules.
+
+Other software that performs full validation will need to modify their
+consensus enforcement rules accordingly.
+
+Wallets, block explorers and other software that interpret block chain data
+must observe the new format and rules.
+
+===Pull Requests===
+
+====Decentralized Treasury====
+
+A reference implementation of the decentralized treasury is 
+implemented by [[https://github.com/decred/dcrd/pull/2170|pull request #2170]].
+
+====Consensus Enforcement====
+
+A reference implementation of enforcing the new semantics in accordance with the
+results of the agenda vote is implemented by
+[[https://github.com/decred/dcrd/pull/2170|pull request #2170]].
+
+====Deployment====
+
+A reference implementation of the required agenda definition is implemented by
+[[https://github.com/decred/dcrd/pull/2170|pull request #2170]].
+
+==Acknowledgements==
+
+Thanks to Dave Collins ([[https://github.com/davecgh|@davecgh]]) and Matheus
+Degiovani ([[https://github.com/matheusd|@matheusd]]) for helpful
+discussions regarding many of the design details.
+
+===Collaborators===
+
+Thanks to the following individuals who provided valuable feedback during the
+review process of this proposal (alphabetical order):
+
+* Dave Collins ([[https://github.com/davecgh|@davecgh]])
+* Donald Adu-Poku ([[https://github.com/dnldd|@dnldd]])
+* Jake Yocom-Piatt
+* Jamie Holdstock ([[https://github.com/jholdstock|@jholdstock]])
+* Joe Gruffins ([[https://github.com/JoeGruffins|@JoeGruffins]])
+* Josh Rickmar ([[https://github.com/jrick|@jrick]])
+* Matheus Degiovani ([[https://github.com/matheusd|@matheusd]])
+
+==References==
+
+# [[https://proposals.decred.org/proposals/c96290a|Politeia Proposal - Decentralize Treasury Spending]]
+
+==Copyright==
+
+This document is licensed under the
+[https://creativecommons.org/publicdomain/zero/1.0 CC0-1.0: Creative Commons CC0 1.0 Universal]
+license.
+
+The code is licensed under the [https://opensource.org/licenses/ISC ISC License].

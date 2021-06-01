@@ -40,5 +40,5 @@ should be performed.
 |-
 |[[./dcp-0005/dcp-0005.mediawiki|0005]]||Block Header Commitments||Active
 |-
-|[[./dcp-0006/dcp-0006.mediawiki|0006]]||Decentralized Treasury||Defined
+|[[./dcp-0006/dcp-0006.mediawiki|0006]]||Decentralized Treasury||Active
 |}

@@ -1,0 +1,239 @@
+<pre>
+DCP: 0007
+Title: Revert Treasury Expenditure Policy
+Author: Matheus Degiovani <contact@matheusd.com>
+Status: Defined
+Created: 2021-06-23
+License: CC0-1.0
+License-Code: ISC
+Requires: DCP0006
+</pre>
+
+==Abstract==
+
+This proposes reverting the currently active maximum expenditure policy of the
+treasury account to the one specified in the original Politeia proposal for the
+decentralized treasury.
+
+==Motivation==
+
+The current algorithm that calculates the maximum expenditure allowed by a set
+of treasury spend transactions within a given window of blocks takes into
+account the average spent in a preceding window.
+
+This is different than the policy that was originally proposed and approved by
+stakeholders in the original Politeia proposal for development of the
+decentralized treasury<ref>[[https://proposals-archive.decred.org/proposals/c96290a]]</ref>
+and has caused an issue that has prevented payments from the treasury account
+from being performed.
+
+This proposal modifies the consensus rules to ensure the maximum expenditure
+policy is in line with what was explicitly approved via Politeia voting, by
+using the total income into the treasury as the reference value to determine the
+spending limit.
+
+The maximum expenditure amount is currently calculated by the <code>dcrd</code> reference
+node implementation by the
+<code>maxTreasuryExpenditure()</code><ref>[[https://github.com/decred/dcrd/blob/afff2fdbcd4c57ade4f0d13e78ad2d3efaebcdec/blockchain/treasury.go#L650]]</ref>
+function. This function defines the following policy:
+
+<blockquote>The sum of treasury spend amounts inside the most recent expenditure window
+cannot exceed the average of the spent amount in the preceding N windows in
+addition to a 50% increase. If no amount is spent in the preceding windows,
+the maximum allowed amount equals a bootstrap amount in addition to a 50%
+increase.</blockquote>
+
+For mainnet, the expenditure policy window has a size of 6912 blocks and 6
+preceding windows are checked, for a total of 41472 blocks. A bootstrap amount
+of 16K DCR is used.
+
+A deeper overview of the issue can be read on the Treasury Expenditure Policy Bug
+blog post<ref>[[https://blog.decred.org/2021/06/25/Treasury-Expenditure-Policy-Bug/|]]</ref>.
+
+==Specification==
+
+Change the maximum expenditure policy to the following:
+
+Given:
+
+* <img src="pw.svg"/> is the size of the policy window (number of blocks that are used to determine the maximum expenditure policy).
+<!-- $\mathcal{B}_i^{tx}$    $tx$     $\mathcal{B}_i$ -->
+* <img src="b_i_tx.svg"/> is the sum of the treasury transactions of type <img src="tx.svg"/> mined in block <img src="bi.svg"/>.
+<!--
+$
+ tx = \begin{cases}
+ ta &\text{treasury add transaction outputs} \\
+ tb &\text{treasurybase transaction outputs} \\
+ ts &\text{treasury spend transaction inputs}
+ \end{cases}
+ $
+-->
+* <img src="tx_types.svg"/>
+
+The maximum expenditure policy M for a given block at height h is defined as:
+
+<!--
+S_{spent} = \displaystyle\sum_{i = max(h - pw, 0)}^{h - 1}{\mathcal{B}_i^{ts}}
+-->
+<img src="s_spent_eq.svg"/>
+
+<!--
+S_{added} = \displaystyle\sum_{i = max(h - pw, 0)}^{h - 1}{\mathcal{B}_i^{ta} + \mathcal{B}_i^{tb}}
+-->
+<img src="s_added_eq.svg"/>
+
+<!--
+A = S_{added} + ⌊S_{added} ÷ 2⌋
+-->
+<img src="a_eq.svg"/>
+
+<!--
+M_h = \begin{cases}
+    0 &\text{if}\enspace S_{spent} \ge A \\
+    A - S_{spent} &\text{otherwise}
+ \end{cases}
+-->
+<img src="mh_eq.svg"/>
+
+Informally:
+
+* <img src="s_spent.svg"/> is the sum of treasury spend transactions inside the most recent policy expenditure window.
+* <img src="s_added.svg"/> is the sum of treasury add and treasurybase transactions inside the same window.
+* <img src="a.svg"/> is the allowance for 150% of the treasury income for the window.
+
+==Rationale==
+
+Changing the expenditure policy to the one originally specified and approved by
+stakeholders in Politeia should not be controversial from a community discussion
+standpoint and solves the immediate issues facing the blocking of spending funds by
+the decentralized treasury.
+
+The two policies are largely compatible at this point in time since the following
+relevant factors are valid under both policies:
+
+* The current average expenditure amount being withdrawn from the treasury.
+* The existing <code>mainnet</code> test treasury spend transaction.
+
+Therefore, if no treasury spend transactions are mined such that they are
+incompatible to the new rule until the new rule is activated and sufficiently
+confirmed, it will be possible to remove legacy code dealing with the old
+policy.
+
+==Deployment==
+
+This agenda will be deployed to mainnet using the standard Decred on-chain
+voting infrastructure as follows:
+
+{|
+!Name!!Setting
+|-
+|Deployment Version||9
+|-
+|Agenda ID||reverttreasurypolicy
+|-
+|Agenda Description||Change the treasury maximum expenditure policy as defined
+in DCP0007
+|-
+|Start Time||1631750400 (Sep 16th, 2021 00:00:00 +0000 UTC)
+|-
+|Expire Time||1694822400 (Sep 16th, 2023 00:00:00 +0000 UTC)
+|-
+|Mask||0x06 (Bits 1 and 2)
+|-
+|Choices||{| !Choice!!English Description!!Bits
+|-
+|abstain||abstain voting for change||0x00
+|-
+|no||keep the existing consensus rules||0x02 (Bit 1)
+|-
+|yes||change to the new consensus rules||0x04 (Bit 2)
+|}
+|}
+
+==Compatibility==
+
+This is a hard-forking change to the Decred consensus.  This means that once the
+agenda is voted in and becomes locked in, anybody running code that fully
+validates blocks must upgrade before the activation time or they will risk
+rejecting a chain containing a transaction that is invalid under the old rules.
+
+Other software that performs full validation will need to modify their consensus
+enforcement rules accordingly.
+
+The changes introduced by this proposal modify block acceptance criteria, but no
+transaction semantics are affected, therefore software other than full nodes or
+ones dealing directly with accounting of treasury transactions will not be
+affected by these changes.
+
+==Reference Implementation==
+
+<pre>
+policyWindow := b.chainParams.TreasuryVoteInterval *
+    b.chainParams.TreasuryVoteIntervalMultiplier *
+    b.chainParams.TreasuryExpenditureWindow
+
+// First: sum up treasury spends, treasury adds and treasurybases inside the 
+// most recent policyWindow.
+spentRecent, addedRecent, _, err := b.sumPastTreasuryExpenditure(preTVINode, policyWindow)
+if err != nil {
+    return 0, err
+}
+
+// Treasury can spend up to 150% the amount received in the window.
+addedPlusAllowance := addedRecent + addedRecent/2
+
+// The maximum expenditure allowed for the next block is the difference
+// between the maximum possible and what has already been spent in the most
+// recent policy window. This is capped at zero on the lower end to account
+// for cases where the policy _already_ spent more than the allowed.
+var allowedToSpend int64
+if addedPlusAllowance > spentRecent {
+    allowedToSpend = addedPlusAllowance - spentRecent
+}
+
+return allowedToSpend, nil
+</pre>
+
+===Pull Requests===
+
+====Revert Treasury Expenditure Policy====
+
+A reference implementation of the Revert Treasury Expenditure Policy
+in accordance with the results of the agenda vote is implemented by
+[[https://github.com/decred/dcrd/pull/2680|dcrd pull request 2680]].
+
+====Deployment====
+
+A reference implementation of the required agenda definition is implemented by 
+[[https://github.com/decred/dcrd/commit/0b991835050850b906b4a2ccb2ad2a8bbe911085|dcrd commit 0b99183]].
+
+
+==Acknowledgements==
+
+===Collaborators===
+
+Thanks to the following individuals who provided valuable feedback during the
+review process of this proposal (alphabetical order):
+
+* Dave Collins ([[https://github.com/davecgh|@davecgh]])
+* JoeGruffins ([[https://github.com/JoeGruffins]])
+* Ryan Staudt ([[https://github.com/rstaudt2]])
+
+==References==
+
+===Inline References===
+
+<references/>
+
+===Additional References===
+
+* [[../dcp-0006/dcp-0006.mediawiki|DCP0006]]
+
+==Copyright==
+
+This document is licensed under the
+[https://creativecommons.org/publicdomain/zero/1.0 CC0-1.0: Creative Commons CC0
+1.0 Universal] license.
+
+The code is licensed under the [https://opensource.org/licenses/ISC ISC
+License].

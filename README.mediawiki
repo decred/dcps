@@ -45,4 +45,6 @@ should be performed.
 |[[./dcp-0007/dcp-0007.mediawiki|0007]]||Revert Treasury Maximum Expenditure Policy||Defined
 |-
 |[[./dcp-0008/dcp-0008.mediawiki|0008]]||Explicit Version Upgrades||Defined
+|-
+|[[./dcp-0009/dcp-0009.mediawiki|0009]]||Automatic Ticket Revocations||Defined
 |}

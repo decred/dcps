@@ -1,0 +1,297 @@
+<pre>
+DCP: 0009
+Title: Automatic Ticket Revocations
+Author: Ryan Staudt <mail@ryanstaudt.com>
+Status: Defined
+Created: 2021-08-25
+License: CC0-1.0
+License-Code: ISC
+</pre>
+
+==Abstract==
+
+This proposes modifications to Decred ticket revocation transactions and block
+acceptance criteria in order to support automatic ticket revocations.
+
+The main changes are:
+
+* Requiring that revocation transactions are version <code>2</code> transactions
+* Requiring that revocation transaction inputs have empty signature scripts
+* Requiring the revocation transaction fee to be zero
+* Updating the ticket redeemer output amounts calculation for revocations
+* Skipping script validation for revocation transactions
+* Requiring blocks to contain revocation transactions for all tickets that will become missed or expired as of that block
+
+==Motivation==
+
+Two primary goals motivate the proposed changes:
+
+* Improve the Decred stakeholder user experience by removing the requirement for stakeholders to manually revoke missed and expired tickets
+* Enable the recovery of funds for users who lost their redeem script for the legacy VSP system (before the release of vspd, which removed the need for the redeem script)
+
+==Specification==
+
+===Revocation Transactions===
+
+This proposal defines the following rule updates for revocation transactions:
+
+* The revocation transaction version MUST be <code>2</code>
+* The revocation transaction fee MUST be zero
+* The single input for revocation transactions MUST have an empty signature script
+
+All other existing revocation transaction rules still apply.
+
+===Ticket Redeemer Output Amounts Calculation===
+
+This proposal defines updated rules specifying how ticket redeemer output
+amounts are calculated for revocation transactions.  The updated rules apply
+only to revocation transactions and NOT vote transactions.
+
+When revoking a ticket, the original ticket contribution amounts must first be
+evenly distributed to each output of the revocation transaction.
+
+After the contributions are distributed evenly, there may be a remainder of
+<code>1</code> to <code>numOutputs - 1</code> atoms.  Each atom in the remainder
+must be added to an output index that is selected in a deterministic uniformly
+pseudorandom manner, as described below.
+
+The pseudorandom selection requires a constant value that is known to all full
+nodes.  This constant is derived from the hex representation of the mathematical
+constant Pi (𝜋) and acts as a publicly verifiable nothing-up-my-sleeve number.
+The constant that is used is <code>0x243F6A8885A308D3</code>.
+
+For a revocation being included into a block at height <code>N+1</code>, the
+remainder should be added to outputs as follows:
+# Initialize variables to be used in the deterministic pseudorandom number generation as follows:
+## Construct the initial 32-byte <code>seed</code> as follows:
+### Concatenate the serialized raw bytes of the header of block <code>N</code> with the constant value <code>0x243F6A8885A308D3</code>
+### Hash the result from the previous step with <code>BLAKE-256</code>
+## Initialize a hash: <code>hash = seed</code>
+## Initialize a hash iterator index: <code>hashIterIdx = 0</code>
+## Initialize a hash offset: <code>hashOffset = 0</code>
+## Initialize <code>upperBound</code> to the number of outputs in the revocation transaction
+##: NOTE: The maximum allowed number of outputs for a revocation transaction, and therefore the maximum <code>upperBound</code>, is <code>64</code>
+# For each atom in the remainder:
+## Select a uniformly random integer <code>i</code> in the range <code>[0, upperBound)</code> as follows:
+### While <code>r < 2^32 % upperBound</code>
+#### Select a random 32-bit integer, <code>r</code>, as follows:
+##### Take a 4-byte slice of the <code>hash</code> between positions <code>hashOffset</code> and <code>hashOffset+4</code>: <code>hash[hashOffset:hashOffset+4]</code>
+##### Assign the big endian 32-bit unsigned integer representation of the result of the previous step to <code>r</code>
+##### Increment <code>hashOffset</code> by <code>1</code>
+##### If <code>hashOffset > 7</code>, then "rollover" the hash as follows:
+###### Set <code>hash</code> to the <code>BLAKE-256</code> hash of the <code>seed</code> concatenated with the <code>hashIterIdx</code>
+###### Set <code>hashOffset = 0</code>
+###### Increment <code>hashIterIdx</code> by <code>1</code>
+### Calculate <code>i = r % upperBound</code> to get the uniformly random integer <code>i</code> in the range <code>[0, upperBound)</code>
+## Increment the payout amount of the output at index <code>i</code> by <code>1</code>
+
+===Skipping Script Validation for Revocation Transactions===
+
+Script validation MUST be skipped for version <code>2</code> revocation
+transactions.
+
+=== Ticket Revocation Eligibility ===
+
+Revocations may spend tickets that are missed or expired as of or prior to the
+block in which they are included.
+
+===Requiring Blocks to Contain Revocation Transactions===
+
+Blocks MUST contain revocation transactions for all tickets that will become
+missed or expired as of that block.
+
+==Rationale==
+
+===Bumping the Revocation Transaction Version===
+
+Requiring the transaction version to be <code>2</code> for revocations as part
+of this proposal provides multiple benefits.
+
+First, it allows for rejecting revocation transactions that are not version
+<code>2</code>, and therefore do not conform to the updated rules, early before
+doing any additional processing of that transaction.
+
+Further, if there are no version <code>2</code> revocations included in blocks
+before the agenda activates, and the agenda has activated, then the updated
+consensus rules could be retroactively updated to be guarded by the transaction
+version rather than the agenda.  This is desirable because it doesn't require
+passing around whether the agenda is active, which itself is based on the
+blockchain global state, and instead could just be based on the transaction
+itself.
+
+===Enforcing Zero Fee for Revocation Transactions===
+
+There must be a rule to limit the revocation transaction fee since the updated
+rules allow tickets to be revoked by anyone.  There is not a strong reason to
+allow a non-zero fee since it will be enforced that blocks MUST contain version
+<code>2</code> ticket revocation transactions.
+
+Further, fees on revocations could potentially create a misalignment of
+incentives in the future when the block rewards are exhausted.  For instance, if
+the amount earned from an additional non-mandatory vote is less than the amount
+that could be earned from a revocation transaction, then miners could be
+incentivized to not include a non-mandatory vote and instead include a
+revocation.
+
+===Ticket Redeemer Output Amounts Calculation===
+
+In order to enforce zero fees for revocation transactions, the ticket redeemer
+output amounts calculation needs to be updated.
+
+Since multiple inputs can be used to purchase a ticket, each one contributes a
+portion of the overall ticket purchase, including the transaction fee.  Thus,
+when claiming the ticket, either due to it being selected to vote or being
+revoked, each output must receive the same proportion of the total amount
+returned.
+
+After the original contribution amounts are evenly distributed to each output,
+there may be a remainder of <code>1</code> to <code>numOutputs - 1</code> atoms.
+The current rule is that this remainder is not added to any of the outputs, and
+it ends up as part of the transaction fee.  A side effect of this rule is that
+an exact fee cannot be easily specified since it may end up being slightly
+higher than desired due to the remaining atoms included in the transaction fee.
+This needs to be modified in order to accommodate the proposed rule change that
+requires revocation transaction fees to be zero.
+
+This proposal uses deterministic uniformly pseudorandom selection to select an
+output to receive each atom in the remainder in order to ensure that the output
+selection cannot be gamed.  The method used for the uniform pseudorandom
+selection was chosen since it is well-proven and already in place for the ticket
+selection lottery.
+
+Due to the fact that this entire process is deterministic, each full node in the
+network is able to independently calculate the same set of outputs, giving nodes
+a trustless method of validating that outputs for the remaining atoms were
+selected in a pseudorandom manner.
+
+===Skipping Script Validation for Revocation Transactions===
+
+Skipping script validation for version <code>2</code> revocation transactions
+allows anyone, including miners, to create ticket revocations.  Further, it
+allows for the recovery of funds for users who lost their redeem script for the
+legacy VSP system.
+
+There is no risk of theft of funds in allowing tickets to be revoked by anyone
+since ticket revocation transactions MUST pay to the address specified by the
+original commitment in the ticket.
+
+=== Ticket Revocation Eligibility ===
+
+Currently, the earliest that revocation transactions are eligible to be spent is
+in the block ''following'' the block in which the ticket was missed or expired.
+Subsequently, the current rule is that the earliest that revocation transactions
+are eligible to be spent is after <code>ticket maturity + 2 blocks</code>, where
+the <code>+ 2</code> represents the block after the entire ticket maturity has
+passed, plus an additional block since the ticket could not have been missed or
+expired until another block has passed.
+
+In order to require blocks to contain revocations for tickets that will become
+missed or expired as of that block, this rule must be updated to allow
+revocations to spend tickets that are missed or expired ''as of'' or prior to
+the block in which they are included.
+
+===Requiring Blocks to Contain Revocation Transactions===
+
+Requiring blocks to contain ticket revocation transactions makes the whole
+revocation process automatic, resulting in a better user experience for
+stakeholders.  The updated rules for revocations described in this proposal
+enable this possibility since version <code>2</code> ticket revocation
+transactions can be created by anyone, including miners, since they will not
+require a valid signature.
+
+==Deployment==
+
+This agenda will be deployed to mainnet using the standard Decred on-chain
+voting infrastructure as follows:
+
+{|
+!Name!!Setting
+|-
+|Deployment Version||9
+|-
+|Agenda ID||autorevocations
+|-
+|Agenda Description||Enable automatic ticket revocations as defined in DCP0009
+|-
+|Start Time||1631750400 (Sep 16th, 2021 00:00:00 +0000 UTC)
+|-
+|Expire Time||1694822400 (Sep 16th, 2023 00:00:00 +0000 UTC)
+|-
+|Mask||0x0060 (Bits 5 and 6)
+|-
+|Choices||{|
+!Choice!!English Description!!Bits
+|-
+|abstain||abstain voting for change||0x0000
+|-
+|no||keep the existing consensus rules||0x0020 (Bit 5)
+|-
+|yes||change to the new consensus rules||0x0040 (Bit 6)
+|}
+|}
+
+==Compatibility==
+
+This is a hard-forking change to the Decred consensus.  This means that once
+the agenda is voted in and becomes locked in, anybody running code that fully
+validates blocks must upgrade before the activation time, or they will risk
+rejecting a chain containing a transaction that is invalid under the old rules.
+
+Other software that performs full validation will need to modify their consensus
+enforcement rules accordingly, and any software that deals with the current
+version of ticket revocation transactions will need to be updated to handle the
+changes specified herein.
+
+==Reference Implementation==
+
+===Deterministic Uniformly Pseudorandom Selection===
+
+A reference implementation of the required deterministic uniformly pseudorandom
+selection is implemented in
+[[https://github.com/decred/dcrd/blob/dabe6074e4ab08ab58312728e393540a9f6c2106/blockchain/stake/lottery.go#L17-L141|stake/lottery.go]].
+
+===Pull Requests===
+
+====Consensus Enforcement====
+
+A reference implementation of enforcing the new semantics in accordance with the
+results of the agenda vote is implemented by
+[[https://github.com/decred/dcrd/pull/2720|pull request #2720]].
+
+====Deployment====
+
+A reference implementation of the required agenda definition is implemented by
+[[https://github.com/decred/dcrd/pull/2718|pull request #2718]].
+
+==Acknowledgements==
+
+Thanks to Dave Collins ([[https://github.com/davecgh|@davecgh]]) for helpful
+discussions regarding many of the design details.
+
+===Collaborators===
+
+Thanks to the following individuals who provided valuable feedback during the
+review process of this proposal (alphabetical order):
+
+* Dave Collins ([[https://github.com/davecgh|@davecgh]])
+* degeri ([[https://github.com/degeri|@degeri]])
+* Joe Gruffins ([[https://github.com/JoeGruffins|@JoeGruffins]])
+* Matheus Degiovani ([[https://github.com/matheusd|@matheusd]])
+
+==References==
+
+===Inline References===
+
+<references/>
+
+===Additional References===
+
+# [[https://proposals.decred.org/record/e2d7b7d|Politeia Proposal - Automatic Ticket Revocations Consensus Change]]
+
+==Copyright==
+
+This document is licensed under the
+[https://creativecommons.org/publicdomain/zero/1.0 CC0-1.0: Creative Commons CC0 1.0 Universal]
+license.
+
+The code is licensed under the [https://opensource.org/licenses/ISC ISC License].

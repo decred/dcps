@@ -1,0 +1,342 @@
+<pre>
+DCP: 0008
+Title: Explicit Version Upgrades
+Author: Dave Collins <davec@decred.org>
+Status: Defined
+Created: 2021-08-24
+License: CC0-1.0
+License-Code: ISC
+</pre>
+
+==Abstract==
+
+This specifies modifications to Decred transaction and scripting language
+version enforcement to reject all newer versions until a consensus vote
+explicitly enables a given version along with fully defined semantics for it.
+
+==Motivation==
+
+There are two primary goals that motivate the proposed changes:
+
+* Provide an easy, reliable, and efficient method for software and hardware to determine exactly which rules should be applied to transaction and script versions
+* Further embrace the increased security, and other desirable properties, that hard forks provide over soft forks
+
+===Consensus Rule Change Detection===
+
+The ability to adapt and upgrade the consensus rules over time is a crucial part
+of keeping up with technological advancements and maintaining high levels of
+security in the face of ever evolving attack vectors.
+
+Naturally, regardless of the specific deployment mechanism, any change in
+consensus rules necessarily means all software and hardware in the ecosystem
+(collectively referred to as ecosystem components hereafter) must be able to
+alter their behavior depending on well-defined criteria in order to keep up with
+the latest rules and fully interoperate correctly.
+
+Decred provides the stakeholders sovereignty over these upgrades via its voting
+process, often called hard fork voting (HFV) or consensus voting.  This means
+that whether or not a particular set of consensus rules is active depends on the
+result of said voting process.
+
+The following is a non-exhaustive list of some common ecosystem components that
+require this ability:
+
+* Fully-validating nodes
+* Wallets (both software and hardware variants)
+* Exchanges (both the centralized and decentralized variants)
+* Payment processors
+* Block explorers
+* Timestamping services
+
+While this need more generally applies to all types of consensus rule changes,
+most areas of the Decred ecosystem are particularly sensitive to changes which
+directly involve transactions and scripts since they are both fundamental
+building blocks that virtually all ecosystem components work with in some way or
+another.
+
+===Hard Forks Preferred===
+
+The two primary methods for updating consensus rules are commonly referred to as
+soft forks and hard forks.  The key difference between the two methods is that
+soft forks involve changing the rules in a way that older nodes are not aware
+that the change has happened whereas hard forks require older nodes to upgrade
+in order to continue following the chain and therefore are fully aware when the
+rules have changed.
+
+This ability to trick older nodes into believing they are faithfully validating
+every transaction when in reality they are not completely undermines the primary
+reason for running a fully-validating node.  In some scenarios, it enables a
+certain class of attacks against people running those out of date nodes by
+taking advantage of the fact they are not actually validating things according
+to the latest consensus rules.
+
+The main takeaway is that hard forks are the preferred method and the Decred
+voting process allows stakeholders to seamlessly choose which side of a hard
+fork is the agreed upon winner in a transparent and cryptographically-provable
+way.
+
+===Existing Version Semantics===
+
+Primarily due to behavior inherited from less capable systems limited to soft
+forks, currently, all transaction and script versions newer than the
+actively-enforced versions are permitted by the consensus rules.
+
+In particular:
+
+* Transactions of newer unknown versions are treated the same as if they were the latest actively-enforced version
+* Newer unknown versions of scripts are treated as valid and therefore never execute
+
+Unfortunately, in addition to other issues associated with soft forks, this
+behavior also means ecosystem components are unable to rely on the version
+having any meaning in terms of exactly which rules should be applied since newer
+versions are permissible _before_ their semantics are defined by future
+consensus upgrades.  In other words, the existence of a transaction or script
+with a given version doesn't guarantee it actually adheres to rules that apply
+to that version since it might have been created prior to the definition of
+those rules.
+
+The changes specified by this proposal permit ecosystem components to safely and
+reliably associate a given version with a specific set of well-defined consensus
+rules.
+
+==Specification==
+
+All transactions and scripts with a version that is greater than their currently
+supported maximum values MUST be rejected until a future consensus rule change
+introduces a new version along with fully defining its semantics.
+
+As of the implementation of this specification, this means imposing the
+following two new rules:
+
+* All transactions with versions greater than 3 MUST be rejected
+* All regular transaction scripts with versions greater than 0 MUST be rejected
+
+<img src="explicit_version_upgrades.svg" width="100%" height="492" />
+
+==Rationale==
+
+The approach taken for these changes was chosen for the following primary reasons:
+
+* Nearly every ecosystem component must work with transactions and/or scripts in one way or another implying they necessarily have access to the transaction version as well as the script version for each of its outputs
+* The transaction and script version fields are self-contained values that do not rely on global state
+* Rejecting newer versions ensures ecosystem components encountering a specific version can safely and reliably associate specific rules with it
+* It makes the upgrade process for new transaction and script versions require hard forks
+
+More generally, there is a strong preference for changes that do not require
+permanently carrying around legacy baggage that ultimately can't be fixed.  The
+proposed implementation satisfies that goal.
+
+===Hard Forks vs Soft Forks and Backward Compatibility===
+
+An extremely widespread, and astonishingly inaccurate, claim made in regards to
+soft forks vs hard forks is the claim that soft forks are backward compatible
+while hard forks are not.  It is important to note that this claim is entirely
+incorrect.  In fact, '''backward compatibility is an absolute requirement '''
+'''for all consensus upgrades regardless of which method is used.'''
+
+Backward compatibility is the ability for newer systems to interoperate with
+older systems.  When it comes to cryptocurrencies and full nodes, regardless of
+whether a hard fork or soft fork is used for consensus upgrades, all newer
+versions of the software must necessarily be backward compatible or they would
+not be able to fully validate historical blocks nor would it be possible to
+spend coins originally created in older versions.
+
+What soft forks actually provide that hard forks do not is
+'''forward compatibility'''.  That is to say the ability of older systems to
+accept input created by newer versions of the system.  In the context of
+cryptocurrencies, and Decred in particular, this would mean older versions of
+the software would still be able to follow the chain with the most Proof-of-Work
+despite not understanding newer validation rules.
+
+On the surface, it might sound like a desirable property to continue allowing
+old software to follow the best chain without upgrading if it's possible to
+implement the change in a way that retains forward compatibility.  However,
+upon closer examination, it really is not desirable, because it undermines the
+very rules that make cryptocurrencies trustless and safe to begin with.  When a
+user is running an old version of a node under a soft fork, they are delegating
+trust to a 3rd party, namely to others who are running the newer versions of the
+software, instead of actually verifying everything themselves.
+
+Perhaps even more insidious is that said users are not even aware they are not
+actually validating all of the rules under soft forks because they are
+specifically designed to intentionally trick older software.
+
+===Implementation Choice===
+
+Although it is generally not recommended, another benefit of hard forks as the
+majority model is that it allows the flexibility for implementations to
+explicitly choose to trust newer transactions or scripts they have not fully
+implemented to essentially regain the same observable result as soft fork
+behavior.  The reverse scenario, that is to say an implementation choosing to
+use hard forks while soft forks are the majority model, is not possible.
+
+So long as a majority of the network is enforcing the hard fork model, which
+this proposal will accomplish, the entire network will benefit from the
+increased security rejecting unknown versions provides, including any
+implementations that are not fully validating.
+
+That said, it is important to keep in mind that any implementation that is not
+properly and fully validating the chain will still incur the associated risks
+that come with using an older node under the soft fork model.
+
+===Future Considerations===
+
+As briefly mentioned in the motivation section, there are additional types of
+consensus rule changes that do not directly involve transactions or their
+underlying scripts which are not covered by this proposal.
+
+One alternate design that should be further considered for a potential future
+modification is the addition of an intervaled header commitment to all vote bits
+via a compact data structure.  Such an approach would provide a trustless
+mechanism to independently verify the result of any vote in a generic way.
+However, that flexibility comes at the cost of requiring verifiers to download
+additional data and verify proofs.
+
+Ultimately, the approach outlined in this proposal was chosen for initial
+deployment because it is a simpler, albeit less comprehensive, approach that
+covers the vast majority of cases that directly affect ecosystem components with
+no downsides and therefore is an excellent choice to deploy separately.
+
+==Deployment==
+
+This agenda will be deployed to mainnet using the standard Decred on-chain
+voting infrastructure as follows:
+
+{|
+!Name!!Setting
+|-
+|Deployment Version||9
+|-
+|Agenda ID||explicitverupgrades
+|-
+|Agenda Description||Enable explicit version upgrades as defined in DCP0008
+|-
+|Start Time||1631750400 (Sep 16th, 2021 00:00:00 +0000 UTC)
+|-
+|Expire Time||1694822400 (Sep 16th, 2023 00:00:00 +0000 UTC)
+|-
+|Mask||0x0018 (Bits 3 and 4)
+|-
+|Choices||{|
+!Choice!!English Description!!Bits
+|-
+|abstain||abstain voting for change||0x00
+|-
+|no||keep the existing consensus rules||0x0008 (Bit 3)
+|-
+|yes||change to the new consensus rules||0x0010 (Bit 4)
+|}
+|}
+
+==Compatibility==
+
+Old nodes that have not been upgraded will continue to follow the chain with the
+most proof-of-work after this change has been deployed.
+
+However, it is highly recommended that all nodes upgrade before the activation
+time so they also fully validate and enforce the new rules versus relying on
+upgraded nodes to do so for them.
+
+Any software or hardware that creates transactions and associated scripts using
+their own code will need to ensure they are not creating newer versions than are
+currently supported by the consensus rules.
+
+Other software that performs full validation will need to upgrade their
+consensus enforcement rules according to the specification herein.
+
+==Reference Implementation==
+
+===Maximum Transaction Version Enforcement===
+
+<pre>
+// Reject transaction versions greater than the highest currently supported
+// version.  Any future consensus changes that result in hard-forking
+// changes to transactions (aka those that are not backward compatible) are
+// expected to only be applied to a new transaction version and to update
+// this code accordingly so that the newer transaction version can be used
+// as a guaranteed proxy for an agenda having passed and become active.
+//
+// Note that prior to the explicit version upgrades agenda, transaction
+// versions are allowed to go up to a max uint16, so fall back to that value
+// accordingly.
+maxAllowedTxVer := ^uint16(0)
+switch {
+case explicitUpgradesActive:
+    maxAllowedTxVer = 3
+}
+if tx.Version > maxAllowedTxVer {
+    str := fmt.Sprintf("transaction version %d is greater than the max "+
+        "allowed version %d)", tx.Version, maxAllowedTxVer)
+    return ruleError(ErrTxVersionTooHigh, str)
+}
+</pre>
+
+===Maximum Script Version Enforcement===
+
+<pre>
+if !isStakeTx {
+    // Note that prior to the explicit version upgrades agenda, transaction
+    // script versions are allowed to go up to a max uint16, so fall back to
+    // that value accordingly.
+    maxAllowedScriptVer := ^uint16(0)
+    switch {
+    case explicitUpgradesActive:
+        maxAllowedScriptVer = 0
+    }
+    for txOutIdx, txOut := range tx.TxOut {
+        // Reject transaction script versions greater than the highest
+        // currently supported version.  Any future consensus changes that
+        // result in introduction of a new script version are expected to
+        // update this code accordingly so that the newer transaction script
+        // version can be used as a guaranteed proxy for an agenda having
+        // passed and become active.
+        //
+        // It is also worth noting that this check only applies to regular
+        // transactions because stake transactions are individually and
+        // separately enforced to be a specific script version.
+        if txOut.Version > maxAllowedScriptVer {
+                str := fmt.Sprintf("script version %d is greater than the max "+
+                    "allowed version %d)", txOut.Version, maxAllowedScriptVer)
+                return ruleError(ErrTxVersionTooHigh, str)
+        }
+    }
+}
+</pre>
+
+===Pull Requests===
+
+===Maximum Transaction and Script Version Enforcement===
+
+A reference implementation of the required consensus changes to enforce the new
+version semantics is provided by
+[[https://github.com/decred/dcrd/pull/2716|pull request #2716]].
+
+====Deployment====
+
+A reference implementation of the required agenda definition is implemented by
+[[https://github.com/decred/dcrd/pull/2713|pull request #2713]].
+
+==Acknowledgements==
+
+===Collaborators===
+
+Thanks to the following individuals who provided valuable feedback during the
+review process of this proposal (alphabetical order):
+
+* degeri ([[https://github.com/degeri|@degeri]])
+* Matheus Degiovani ([[https://github.com/matheusd|@matheusd]])
+* Ryan Staudt ([[https://github.com/rstaudt2|@rstaudt2]])
+
+==References==
+
+===Additional References===
+
+# [[https://proposals.decred.org/record/3a98861|Politeia Proposal - Explicit Version Upgrades Consensus Change]]
+
+==Copyright==
+
+This document is licensed under the
+[https://creativecommons.org/publicdomain/zero/1.0 CC0-1.0: Creative Commons CC0 1.0 Universal]
+license.
+
+The code is licensed under the [https://opensource.org/licenses/ISC ISC License].

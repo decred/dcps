@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" color-interpolation="auto" stroke="#000" stroke-linecap="square" width="826" stroke-miterlimit="10" height="492" font-family="'Dialog'" font-size="12">
+  <defs id="defs1">
+    <linearGradient x1="1422.514" gradientUnits="userSpaceOnUse" x2="1589.835" y1="964.049" y2="964.049" id="linearGradient1" spreadMethod="reflect">
+      <stop stop-color="#2ED6A1" offset="0%"/>
+      <stop stop-color="#21AA7F" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1422.514" gradientUnits="userSpaceOnUse" x2="1589.835" y1="999.922" y2="999.922" id="linearGradient2" spreadMethod="reflect">
+      <stop stop-color="#70CBFF" offset="0%"/>
+      <stop stop-color="#38B6FF" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1422.514" gradientUnits="userSpaceOnUse" x2="1589.835" y1="1114.667" y2="1114.667" id="linearGradient3" spreadMethod="reflect">
+      <stop stop-color="#70CBFF" offset="0%"/>
+      <stop stop-color="#38B6FF" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1338.853" gradientUnits="userSpaceOnUse" x2="1589.835" y1="1035.795" y2="1083.795" id="linearGradient4" spreadMethod="reflect">
+      <stop stop-color="#70CBFF" offset="0%"/>
+      <stop stop-color="#38B6FF" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1422.514" gradientUnits="userSpaceOnUse" x2="1589.835" y1="1150.54" y2="1150.54" id="linearGradient5" spreadMethod="reflect">
+      <stop stop-color="#70CBFF" offset="0%"/>
+      <stop stop-color="#38B6FF" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1338.853" gradientUnits="userSpaceOnUse" x2="1589.835" y1="1186.413" y2="1234.413" id="linearGradient6" spreadMethod="reflect">
+      <stop stop-color="#70CBFF" offset="0%"/>
+      <stop stop-color="#38B6FF" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1422.514" gradientUnits="userSpaceOnUse" x2="1589.835" y1="1264.77" y2="1264.77" id="linearGradient7" spreadMethod="reflect">
+      <stop stop-color="#70CBFF" offset="0%"/>
+      <stop stop-color="#38B6FF" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1422.514" gradientUnits="userSpaceOnUse" x2="1589.835" y1="1300.643" y2="1300.643" id="linearGradient8" spreadMethod="reflect">
+      <stop stop-color="#70CBFF" offset="0%"/>
+      <stop stop-color="#38B6FF" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1422.514" gradientUnits="userSpaceOnUse" x2="1589.835" y1="1336.515" y2="1336.515" id="linearGradient9" spreadMethod="reflect">
+      <stop stop-color="#70CBFF" offset="0%"/>
+      <stop stop-color="#38B6FF" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1666.188" gradientUnits="userSpaceOnUse" x2="1809.188" y1="932.486" y2="1031.486" id="linearGradient10" spreadMethod="reflect">
+      <stop stop-color="#8C9EAF" offset="0%"/>
+      <stop stop-color="#6D849B" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1975.375" gradientUnits="userSpaceOnUse" x2="2118.375" y1="953.486" y2="1010.486" id="linearGradient11" spreadMethod="reflect">
+      <stop stop-color="#FD714A" offset="0%"/>
+      <stop stop-color="#FC4816" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1763.035" gradientUnits="userSpaceOnUse" x2="1926.73" y1="1183.949" y2="1183.949" id="linearGradient12" spreadMethod="reflect">
+      <stop stop-color="#70CBFF" offset="0%"/>
+      <stop stop-color="#38B6FF" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1763.035" gradientUnits="userSpaceOnUse" x2="1926.73" y1="1216.633" y2="1216.633" id="linearGradient13" spreadMethod="reflect">
+      <stop stop-color="#2ED6A1" offset="0%"/>
+      <stop stop-color="#21AA7F" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1763.035" gradientUnits="userSpaceOnUse" x2="1926.73" y1="1249.77" y2="1249.77" id="linearGradient14" spreadMethod="reflect">
+      <stop stop-color="#70CBFF" offset="0%"/>
+      <stop stop-color="#38B6FF" offset="100%"/>
+    </linearGradient>
+    <linearGradient x1="1975.375" gradientUnits="userSpaceOnUse" x2="2118.375" y1="1185.07" y2="1284.07" id="linearGradient15" spreadMethod="reflect">
+      <stop stop-color="#8C9EAF" offset="0%"/>
+      <stop stop-color="#6D849B" offset="100%"/>
+    </linearGradient>
+    <clipPath clipPathUnits="userSpaceOnUse" id="clipPath1">
+      <path d="M0 0h826v492H0V0z"/>
+    </clipPath>
+    <clipPath clipPathUnits="userSpaceOnUse" id="clipPath2">
+      <path d="M1308 911h826v492h-826V911z"/>
+    </clipPath>
+  </defs>
+  <path clip-path="url(#clipPath2)" stroke="none" d="M1308 911h826v492h-826z" transform="translate(-1308 -911)" fill="#fff" text-rendering="geometricPrecision" shape-rendering="geometricPrecision"/>
+  <g fill="#F5F5F5" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)" stroke="none">
+    <rect x="1323.853" y="926.673" clip-path="url(#clipPath2)" width="280.982" rx="4" ry="4" height="460.716"/>
+    <path clip-path="url(#clipPath2)" fill="#EBEBEB" d="M1323.853 926.673h280.982v22.377h-280.982z"/>
+  </g>
+  <g font-size="15" stroke-linecap="butt" transform="translate(-1308 -911)" text-rendering="geometricPrecision" font-family="sans-serif" shape-rendering="geometricPrecision" stroke-miterlimit="1.45">
+    <text x="1425.16" y="943.753" clip-path="url(#clipPath2)" stroke="none">
+      Transaction
+    </text>
+    <rect x="1323.853" y="926.673" clip-path="url(#clipPath2)" fill="none" width="280.982" rx="4" ry="4" height="460.716"/>
+  </g>
+  <path clip-path="url(#clipPath2)" stroke="none" d="M1338.853 964.049h250.982v35.873h-250.982z" fill="url(#linearGradient1)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" clip-path="url(#clipPath2)" d="M1338.853 964.049h250.982v35.873h-250.982z" transform="translate(-1308 -911)"/>
+    <text x="1444.001" y="986.699" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Version
+    </text>
+  </g>
+  <path clip-path="url(#clipPath2)" stroke="none" d="M1338.853 999.922h250.982v35.873h-250.982z" fill="url(#linearGradient2)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" clip-path="url(#clipPath2)" d="M1338.853 999.922h250.982v35.873h-250.982z" transform="translate(-1308 -911)"/>
+    <text x="1445.996" y="1022.572" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Input 0
+    </text>
+  </g>
+  <path clip-path="url(#clipPath2)" stroke="none" d="M1338.853 1114.667h250.982v35.873h-250.982z" fill="url(#linearGradient3)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" clip-path="url(#clipPath2)" d="M1338.853 1114.667h250.982v35.873h-250.982z" transform="translate(-1308 -911)"/>
+    <text x="1445" y="1137.318" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Input N
+    </text>
+  </g>
+  <path d="M1338.853 1035.795h250.982v42q-62.745-12-125.49 0-62.746 12-125.492 0z" clip-path="url(#clipPath2)" stroke="none" fill="url(#linearGradient4)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" d="M1338.853 1035.795h250.982v42q-62.745-12-125.49 0-62.746 12-125.492 0z" clip-path="url(#clipPath2)" transform="translate(-1308 -911)"/>
+    <text x="1445.996" y="1053.859" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Input 1
+    </text>
+  </g>
+  <path clip-path="url(#clipPath2)" stroke="none" d="M1338.853 1150.54h250.982v35.873h-250.982z" fill="url(#linearGradient5)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" clip-path="url(#clipPath2)" d="M1338.853 1150.54h250.982v35.873h-250.982z" transform="translate(-1308 -911)"/>
+    <text x="1441.329" y="1173.19" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Output 0
+    </text>
+  </g>
+  <path d="M1338.853 1186.413h250.982v42q-62.745-12-125.49 0-62.746 12-125.492 0z" clip-path="url(#clipPath2)" stroke="none" fill="url(#linearGradient6)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" d="M1338.853 1186.413h250.982v42q-62.745-12-125.49 0-62.746 12-125.492 0z" clip-path="url(#clipPath2)" transform="translate(-1308 -911)"/>
+    <text x="1441.329" y="1204.477" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Output 1
+    </text>
+  </g>
+  <path clip-path="url(#clipPath2)" stroke="none" d="M1338.853 1264.77h250.982v35.873h-250.982z" fill="url(#linearGradient7)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" clip-path="url(#clipPath2)" d="M1338.853 1264.77h250.982v35.873h-250.982z" transform="translate(-1308 -911)"/>
+    <text x="1440.333" y="1287.42" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Output N
+    </text>
+  </g>
+  <path clip-path="url(#clipPath2)" stroke="none" d="M1338.853 1300.643h250.982v35.873h-250.982z" fill="url(#linearGradient8)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" clip-path="url(#clipPath2)" d="M1338.853 1300.643h250.982v35.873h-250.982z" transform="translate(-1308 -911)"/>
+    <text x="1436.67" y="1323.293" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Lock Time
+    </text>
+  </g>
+  <path clip-path="url(#clipPath2)" stroke="none" d="M1338.853 1336.515h250.982v35.873h-250.982z" fill="url(#linearGradient9)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" clip-path="url(#clipPath2)" d="M1338.853 1336.515h250.982v35.873h-250.982z" transform="translate(-1308 -911)"/>
+    <text x="1447.674" y="1359.166" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Expiry
+    </text>
+  </g>
+  <path d="M1737.688 932.486l71.5 49.5-71.5 49.5-71.5-49.5z" clip-path="url(#clipPath2)" stroke="none" fill="url(#linearGradient10)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" d="M1737.688 932.486l71.5 49.5-71.5 49.5-71.5-49.5z" clip-path="url(#clipPath2)" transform="translate(-1308 -911)"/>
+    <text x="1706.34" y="979.349" clip-path="url(#clipPath2)" fill="#fff" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Transaction
+    </text>
+    <text x="1703.832" y="994.05" clip-path="url(#clipPath2)" fill="#fff" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Version &gt; 3?
+    </text>
+  </g>
+  <rect x="1975.375" y="953.486" clip-path="url(#clipPath2)" width="143" rx="28.5" ry="28.5" height="57" stroke="none" fill="url(#linearGradient11)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" transform="translate(-1308 -911)" stroke-linecap="butt">
+    <rect x="1975.375" y="953.486" clip-path="url(#clipPath2)" fill="none" width="143" rx="28.5" ry="28.5" height="57"/>
+    <text x="1996.625" font-size="16" y="988.271" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none">
+      Fail Validation
+    </text>
+  </g>
+  <g stroke-linecap="round" stroke-dashoffset="2" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" stroke-dasharray="0,8" stroke-width="2" stroke-miterlimit="1.45" fill="none">
+    <path d="M1464.344 1077.814v36.846M1464.344 1228.38v36.39" clip-path="url(#clipPath2)" transform="translate(-1308 -911)"/>
+  </g>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" d="M1666.18 981.986h-76.345 0M1809.21 981.986h158.15" clip-path="url(#clipPath2)" transform="translate(-1308 -911)"/>
+    <path d="M1975.36 981.986l-12-5 3 5-3 5z" clip-path="url(#clipPath2)" stroke="none" transform="translate(-1308 -911)"/>
+    <text x="1821.313" y="975.349" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Yes
+    </text>
+  </g>
+  <g fill="#F5F5F5" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)" stroke="none">
+    <rect x="1666.188" y="1146.572" clip-path="url(#clipPath2)" width="275.542" rx="4" ry="4" height="154.07"/>
+    <path clip-path="url(#clipPath2)" fill="#EBEBEB" d="M1666.188 1146.572h275.542v22.377h-275.542z"/>
+  </g>
+  <g font-size="15" stroke-linecap="butt" transform="translate(-1308 -911)" text-rendering="geometricPrecision" font-family="sans-serif" shape-rendering="geometricPrecision" stroke-miterlimit="1.45">
+    <text x="1759.354" y="1163.653" clip-path="url(#clipPath2)" stroke="none">
+      Output Fields
+    </text>
+    <rect x="1666.188" y="1146.572" clip-path="url(#clipPath2)" fill="none" width="275.542" rx="4" ry="4" height="154.07"/>
+  </g>
+  <path clip-path="url(#clipPath2)" stroke="none" d="M1681.188 1183.949h245.542v35.873h-245.542z" fill="url(#linearGradient12)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" clip-path="url(#clipPath2)" d="M1681.188 1183.949h245.542v35.873h-245.542z" transform="translate(-1308 -911)"/>
+    <text x="1763.602" y="1206.599" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Output Amount
+    </text>
+  </g>
+  <path clip-path="url(#clipPath2)" stroke="none" d="M1681.188 1216.633h245.542v35.873h-245.542z" fill="url(#linearGradient13)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" clip-path="url(#clipPath2)" d="M1681.188 1216.633h245.542v35.873h-245.542z" transform="translate(-1308 -911)"/>
+    <text x="1736.596" y="1239.284" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Public Key Script Version
+    </text>
+  </g>
+  <path clip-path="url(#clipPath2)" stroke="none" d="M1681.188 1249.77h245.542v35.873h-245.542z" fill="url(#linearGradient14)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" clip-path="url(#clipPath2)" d="M1681.188 1249.77h245.542v35.873h-245.542z" transform="translate(-1308 -911)"/>
+    <text x="1758.607" y="1272.42" clip-path="url(#clipPath2)" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Public Key Script
+    </text>
+  </g>
+  <path d="M2046.875 1185.07l71.5 49.5-71.5 49.5-71.5-49.5z" clip-path="url(#clipPath2)" stroke="none" fill="url(#linearGradient15)" text-rendering="geometricPrecision" shape-rendering="geometricPrecision" transform="translate(-1308 -911)"/>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" d="M2046.875 1185.07l71.5 49.5-71.5 49.5-71.5-49.5z" clip-path="url(#clipPath2)" transform="translate(-1308 -911)"/>
+    <text x="2031.538" y="1231.933" clip-path="url(#clipPath2)" fill="#fff" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Script
+    </text>
+    <text x="2013.02" y="1246.634" clip-path="url(#clipPath2)" fill="#fff" font-family="sans-serif" stroke="none" transform="translate(-1308 -911)">
+      Version &gt; 0?
+    </text>
+  </g>
+  <g text-rendering="geometricPrecision" stroke-miterlimit="1.45" stroke-dasharray="6,2" shape-rendering="geometricPrecision" stroke-linecap="butt">
+    <path fill="none" d="M1666.167 1216.252l-76.323-65.712M1666.16 1250.581l-76.293 49.367" clip-path="url(#clipPath2)" transform="translate(-1308 -911)"/>
+    <path fill="none" stroke-dasharray="none" d="M1926.751 1234.57h48.595M2047.048 1185.212l.583-166.698" clip-path="url(#clipPath2)" transform="translate(-1308 -911)"/>
+    <path d="M2047.66 1010.514l-5.043 11.983 5.01-2.983 4.99 3.018z" clip-path="url(#clipPath2)" stroke="none" transform="translate(-1308 -911)"/>
+    <text x="2022.406" y="1170.308" clip-path="url(#clipPath2)" font-family="sans-serif" stroke-dasharray="none" stroke="none" transform="translate(-1308 -911)">
+      Yes
+    </text>
+  </g>
+</svg>

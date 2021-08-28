@@ -43,4 +43,6 @@ should be performed.
 |[[./dcp-0006/dcp-0006.mediawiki|0006]]||Decentralized Treasury||Active
 |-
 |[[./dcp-0007/dcp-0007.mediawiki|0007]]||Revert Treasury Maximum Expenditure Policy||Defined
+|-
+|[[./dcp-0008/dcp-0008.mediawiki|0008]]||Explicit Version Upgrades||Defined
 |}

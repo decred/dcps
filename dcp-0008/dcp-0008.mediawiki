@@ -2,7 +2,7 @@
 DCP: 0008
 Title: Explicit Version Upgrades
 Author: Dave Collins <davec@decred.org>
-Status: Defined
+Status: Active
 Created: 2021-08-24
 License: CC0-1.0
 License-Code: ISC

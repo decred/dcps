@@ -2,7 +2,7 @@
 DCP: 0009
 Title: Automatic Ticket Revocations
 Author: Ryan Staudt <mail@ryanstaudt.com>
-Status: Defined
+Status: Active
 Created: 2021-08-25
 License: CC0-1.0
 License-Code: ISC

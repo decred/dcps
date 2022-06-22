@@ -3,7 +3,7 @@ DCP: 0010
 Title: Change PoW/PoS Subsidy Split To 10/80
 Author: Dave Collins <davec@decred.org>
         Jake Yocom-Piatt
-Status: Defined
+Status: Active
 Created: 2021-12-16
 License: CC0-1.0
 License-Code: ISC

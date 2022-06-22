@@ -42,11 +42,11 @@ should be performed.
 |-
 |[[./dcp-0006/dcp-0006.mediawiki|0006]]||Decentralized Treasury||Active
 |-
-|[[./dcp-0007/dcp-0007.mediawiki|0007]]||Revert Treasury Maximum Expenditure Policy||Defined
+|[[./dcp-0007/dcp-0007.mediawiki|0007]]||Revert Treasury Maximum Expenditure Policy||Active
 |-
-|[[./dcp-0008/dcp-0008.mediawiki|0008]]||Explicit Version Upgrades||Defined
+|[[./dcp-0008/dcp-0008.mediawiki|0008]]||Explicit Version Upgrades||Active
 |-
-|[[./dcp-0009/dcp-0009.mediawiki|0009]]||Automatic Ticket Revocations||Defined
+|[[./dcp-0009/dcp-0009.mediawiki|0009]]||Automatic Ticket Revocations||Active
 |-
-|[[./dcp-0010/dcp-0010.mediawiki|0010]]||Change PoW/PoS Subsidy Split To 10/80||Defined
+|[[./dcp-0010/dcp-0010.mediawiki|0010]]||Change PoW/PoS Subsidy Split To 10/80||Active
 |}

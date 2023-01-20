@@ -125,7 +125,7 @@ Additional consensus subsidy checks:
 * The length of transaction output 0 script shall be 1 and the script shall be <code>OP_TADD</code>.
 * The treasury subsidy shall be calculated based on the height and verified to be correct in the transaction. One notable difference is that the treasury subsidy is NOT divided by the number of votes on the block. This is the only difference from the original <code>coinbase</code> subsidy calculation.
 
-Changes to <code>coinbas</code>e:
+Changes to <code>coinbase</code>:
 * Coinbase shall no longer carry the treasury subsidy transaction at transaction output 0.
 * Coinbase transaction version shall be 3.
 * The treasury subsidy value is subtracted from transaction input 0 value. An important and intended consequence of this is that disapproved blocks no longer remove the per-block treasury payout.
@@ -350,7 +350,7 @@ rules.
 Other software that performs full validation will need to modify their
 consensus enforcement rules accordingly.
 
-Wallets, block explorers and other software that interpret block chain data
+Wallets, block explorers and other software that interpret blockchain data
 must observe the new format and rules.
 
 ==Reference Implementation==

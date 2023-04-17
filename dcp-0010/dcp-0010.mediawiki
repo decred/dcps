@@ -84,7 +84,7 @@ only be applied to <code>mainnet</code>, and current <code>testnet</code>, for
 heights where the new rules are active per the associated on-chain vote.
 
 <!--S_{pow}(h,v) & = & \begin{cases}0 & \text{if } h \le 0,\\S_{full}(1) & \text{if } h = 1,\\\left\lfloor\frac{S_{full}(h) \times 1}{10}\right\rfloor & \text{if } 2 \le h < H_{sv},\\0 & \text{if } h \ge H_{sv} \textbf{ and } v < v_{m},\\\left\lfloor\frac{\left\lfloor\frac{S_{full}(h) \times 1}{10}\right\rfloor \times v}{v_{b}}\right\rfloor & \text{if } h \ge H_{sv} \textbf{ and } v \ge v_{m},\end{cases}-->
-<!--S_{vote}(h) & = & \begin{cases}0 & \text{if } 0 \le x < H_{sv}-1,\\\left\lfloor\frac{S_{full}(h) \times 8}{10 \times v_{b} }\right\rfloor & \text{if } x \ge H_{sv}-1,\end{cases}-->
+<!--S_{vote}(h) & = & \begin{cases}0 & \text{if } 0 \le h < H_{sv}-1,\\\left\lfloor\frac{S_{full}(h) \times 8}{10 \times v_{b} }\right\rfloor & \text{if } h \ge H_{sv}-1,\end{cases}-->
 <img src="subsidy_proportions.svg" width="100%" height="464" />
 
 Explanation of terms:

@@ -248,7 +248,7 @@ consensus enforcement rules according to the specification herein.
 
 ===Maximum Transaction Version Enforcement===
 
-<pre>
+<source lang="go">
 // Reject transaction versions greater than the highest currently supported
 // version.  Any future consensus changes that result in hard-forking
 // changes to transactions (aka those that are not backward compatible) are
@@ -269,11 +269,11 @@ if tx.Version > maxAllowedTxVer {
         "allowed version %d)", tx.Version, maxAllowedTxVer)
     return ruleError(ErrTxVersionTooHigh, str)
 }
-</pre>
+</source>
 
 ===Maximum Script Version Enforcement===
 
-<pre>
+<source lang="go">
 if !isStakeTx {
     // Note that prior to the explicit version upgrades agenda, transaction
     // script versions are allowed to go up to a max uint16, so fall back to
@@ -301,7 +301,7 @@ if !isStakeTx {
         }
     }
 }
-</pre>
+</source>
 
 ===Pull Requests===
 

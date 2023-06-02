@@ -233,7 +233,7 @@ subsidy proportions as well as the new ones defined herein.
 
 ===Full Block Subsidy Calculation===
 
-<pre>
+<source lang="go">
 // calcBlockSubsidy returns the max potential subsidy for a block at the
 // provided height.  This value is reduced over time based on the height and
 // then split proportionally between PoW, PoS, and the Treasury.
@@ -278,11 +278,11 @@ func calcBlockSubsidy(height int64) int64 {
 	}
 	return subsidy
 }
-</pre>
+</source>
 
 ===Work (PoW) Proportion Subsidy Calculation===
 
-<pre>
+<source lang="go">
 // calcWorkSubsidyDCP0010 returns the proof of work subsidy for a block at the
 // provided height and given number of votes using the modified subsidy split.
 func calcWorkSubsidyDCP0010(height int64, voters uint16) int64 {
@@ -324,11 +324,11 @@ func calcWorkSubsidyDCP0010(height int64, voters uint16) int64 {
 	// Adjust for the number of voters.
 	return (int64(voters) * subsidy) / votesPerBlock
 }
-</pre>
+</source>
 
 ===Stake Vote (PoS) Proportion Subsidy Calculation===
 
-<pre>
+<source lang="go">
 // calcStakeVoteSubsidyDCP0010 returns the subsidy for a single stake vote for a
 // block at the provided height using the modified subsidy split.
 func calcStakeVoteSubsidyDCP0010(height int64) int64 {
@@ -360,7 +360,7 @@ func calcStakeVoteSubsidyDCP0010(height int64) int64 {
 
 	return subsidy
 }
-</pre>
+</source>
 
 ===Pull Requests===
 

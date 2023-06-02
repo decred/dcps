@@ -318,7 +318,7 @@ system and consensus enforcement rules according to the specification herein.
 
 ===Sequence Lock Consensus Enforcement===
 
-<pre>
+<source lang="go">
 const (
 	// SequenceLockTimeDisabled is a flag that if set on a transaction
 	// input's sequence number, the sequence number will not be interpreted
@@ -463,11 +463,11 @@ func (b *BlockChain) calcSequenceLock(node *blockNode, tx *dcrutil.Tx, view *Utx
 
 	return sequenceLock, nil
 }
-</pre>
+</source>
 
 ===Sequence Number Conversion===
 
-<pre>
+<source lang="go">
 // LockTimeToSequence converts the passed relative lock time to a sequence
 // number in accordance with DCP0003.
 //
@@ -521,11 +521,11 @@ func LockTimeToSequence(isSeconds bool, lockTime uint32) (uint32, error) {
 	return SequenceLockTimeIsSeconds |
 	    lockTime>>SequenceLockTimeGranularity, nil
 }
-</pre>
+</source>
 
 ===Opcode Execution===
 
-<pre>
+<source lang="go">
 // verifyLockTime is a helper function used to validate locktimes.
 func verifyLockTime(txLockTime, threshold, lockTime int64) error {
 	// The lockTimes in both the script and transaction must be of the same
@@ -620,7 +620,7 @@ func opcodeCheckSequenceVerify(op *parsedOpcode, vm *Engine) error {
 
 	return nil
 }
-</pre>
+</source>
 
 ===Pull Requests===
 

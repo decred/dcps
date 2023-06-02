@@ -286,7 +286,7 @@ according to the specification herein.
 
 ===Supply Estimation===
 
-<pre>
+<source lang="go">
 // estimateSupply returns an estimate of the coin supply for the provided block
 // height.  This is primarily used in the stake difficulty algorithm and relies
 // on an estimate to simplify the necessary calculations.  The actual total
@@ -333,11 +333,11 @@ func estimateSupply(height int64) int64 {
 	supply -= mainnetBaseSubsidy * 2
 	return supply
 }
-</pre>
+</source>
 
 ===Stake Difficulty Calculation===
 
-<pre>
+<source lang="go">
 // calcNextStakeDiff calculates the next stake difficulty for the given set
 // of parameters using the algorithm defined in this document.
 //
@@ -382,7 +382,7 @@ func calcNextStakeDiff(nextHeight, curDiff, prevPoolSizeAll, curPoolSizeAll int6
 	}
 	return nextDiff
 }
-</pre>
+</source>
 
 ===Pull Request===
 

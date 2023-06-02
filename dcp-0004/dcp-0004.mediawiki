@@ -122,7 +122,7 @@ previous more restrictive rules.
 
 ==Reference Implementation==
 
-<pre>
+<source lang="go">
 // Only create and use a view which preserves the expected consensus
 // semantics for relative lock times via sequence numbers until DCP0004
 // becomes active.
@@ -138,7 +138,7 @@ if lnFeaturesActive && !fixSeqLocksActive {
 		return err
 	}
 }
-</pre>
+</source>
 
 ===Pull Requests===
 

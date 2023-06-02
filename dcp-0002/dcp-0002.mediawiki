@@ -144,7 +144,7 @@ specification herein.
 
 ===Opcode Execution===
 
-<pre>
+<source lang="go">
 // opcodeSha256 treats the top item of the data stack as raw bytes and replaces
 // it with sha256(data).
 //
@@ -168,7 +168,7 @@ func opcodeSha256(op *parsedOpcode, vm *Engine) error {
 	vm.dstack.PushByteArray(hash[:])
 	return nil
 }
-</pre>
+</source>
 
 ===Pull Requests===
 

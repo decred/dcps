@@ -1,0 +1,17 @@
+<pre>
+DCP: 0012
+Title: Change PoW/PoS Subsidy Split To 1/89
+Author: Dave Collins <davec@decred.org>
+        Jake Yocom-Piatt
+Status: Defined
+Created: 2023-04-13
+License: CC0-1.0
+License-Code: ISC
+Requires: DCP0006
+Replaces: DCP0010
+</pre>
+
+==Abstract==
+
+This specification is currently a work and in progress and will be completed
+prior to the start of the vote.

@@ -8,6 +8,7 @@ Created: 2021-12-16
 License: CC0-1.0
 License-Code: ISC
 Requires: DCP0006
+Superseded-By: DCP0012
 </pre>
 
 ==Abstract==

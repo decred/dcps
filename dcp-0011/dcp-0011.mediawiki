@@ -1,0 +1,15 @@
+<pre>
+DCP: 0011
+Title: Change PoW to BLAKE3 and ASERT
+Author: Dave Collins <davec@decred.org>
+Status: Defined
+Created: 2023-04-13
+License: CC0-1.0
+License-Code: ISC
+Requires: DCP0001, DCP0005, DCP0006, DCP0010
+</pre>
+
+==Abstract==
+
+This specification is currently a work and in progress and will be completed
+prior to the start of the vote.

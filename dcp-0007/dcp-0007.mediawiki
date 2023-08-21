@@ -167,7 +167,7 @@ affected by these changes.
 
 ==Reference Implementation==
 
-<pre>
+<source lang="go">
 policyWindow := b.chainParams.TreasuryVoteInterval *
     b.chainParams.TreasuryVoteIntervalMultiplier *
     b.chainParams.TreasuryExpenditureWindow
@@ -192,7 +192,7 @@ if addedPlusAllowance > spentRecent {
 }
 
 return allowedToSpend, nil
-</pre>
+</source>
 
 ===Pull Requests===
 

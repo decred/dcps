@@ -321,7 +321,6 @@ agenda activation.
 * All valid <code>treasury add</code> stake transaction inputs shall be added to the filter.
 * <code>treasury add</code> stake change shall be added to the filter.
 
-
 ===Chain parameters===
 
 The following blockchain parameters were added:
@@ -337,6 +336,37 @@ The following blockchain parameters were added:
 * Treasury Vote Quorum Divisor, or TVQD: 5
 * Treasury Vote Required Multiplier, or TVRM: 3 (60% yes votes required)
 * Treasury Vote Required Divisor, or TVRD: 5
+
+==Deployment==
+
+This agenda will be deployed to mainnet using the standard Decred on-chain
+voting infrastructure as follows:
+
+{|
+!Name!!Setting
+|-
+|Deployment Version||8
+|-
+|Agenda ID||treasury
+|-
+|Agenda Description||Enable decentralized Treasury opcodes as defined in DCP0006
+|-
+|Start Time||1596240000 (Aug 1st, 2020 00:00:00 +0000 UTC)
+|-
+|Expire Time||1627776000 (Aug 1st, 2021 00:00:00 +0000 UTC)
+|-
+|Mask||0x06 (Bits 1 and 2)
+|-
+|Choices||{|
+!Choice!!English Description!!Bits
+|-
+|abstain||abstain voting for change||0x00
+|-
+|no||keep the existing consensus rules||0x02 (Bit 1)
+|-
+|yes||change to the new consensus rules||0x04 (Bit 2)
+|}
+|}
 
 ==Compatibility==
 

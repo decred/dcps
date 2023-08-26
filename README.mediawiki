@@ -50,7 +50,7 @@ should be performed.
 |-
 |[[./dcp-0010/dcp-0010.mediawiki|0010]]||Change PoW/PoS Subsidy Split To 10/80||Active
 |-
-|[[./dcp-0011/dcp-0011.mediawiki|0011]]||Change PoW to BLAKE3 and ASERT||Defined
+|[[./dcp-0011/dcp-0011.mediawiki|0011]]||Change PoW to BLAKE3 and ASERT||Locked In
 |-
-|[[./dcp-0012/dcp-0012.mediawiki|0012]]||Change PoW/PoS Subsidy Split To 1/89||Defined
+|[[./dcp-0012/dcp-0012.mediawiki|0012]]||Change PoW/PoS Subsidy Split To 1/89||Locked In
 |}

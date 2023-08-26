@@ -339,7 +339,9 @@ The following blockchain parameters were added:
 
 ==Deployment==
 
-This agenda will be deployed to mainnet using the standard Decred on-chain
+===Voting Agenda Parameters===
+
+This proposal will be deployed to mainnet using the standard Decred on-chain
 voting infrastructure as follows:
 
 {|
@@ -366,6 +368,24 @@ voting infrastructure as follows:
 |-
 |yes||change to the new consensus rules||0x04 (Bit 2)
 |}
+|}
+
+===Voting Results===
+
+This proposal was approved by the stakeholder voting process and is now active.
+
+Implementations MAY optimize their enforcement activation logic to apply the new
+rules specified by this proposal to the <code>Active</code> block and all of its
+descendants as opposed to tallying historical votes.
+
+{|
+!Status!!Block Hash!!Block Height
+|-
+|Voting Started||000000000000000006005a7e67eafc7fdc65909d10498bed4093d926d7b5318e||536320
+|-
+|Locked In||000000000000000012449cc1cc38a6e41294ed9525f7e64ab39f0de8801c8d38||544384
+|-
+|Active||00000000000000001c6fc262b2673d94827f87daa329b0bdeb7866562ef919cf||552448
 |}
 
 ==Compatibility==

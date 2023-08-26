@@ -152,6 +152,8 @@ changes must make use of a voting agenda.
 
 The voting agenda definition should be of the following form:
 
+=====Voting Agenda Params=====
+
 {|
 !Name!!Setting
 |-
@@ -178,6 +180,24 @@ The voting agenda definition should be of the following form:
 |-
 |option 2||''short description of the choice''||''value of choice in hex (Bit #)''
 |}
+|}
+
+Additionally, once the voting has completed, whether the vote passed or failed,
+a voting results section should be added and be of the following form:
+
+=====Voting Results=====
+
+This proposal was approved/rejected by the stakeholder voting process and is now
+active/failed.
+
+{|
+!Status!!Block Hash!!Block Height
+|-
+|Voting Started||''hash of the block''||''height of the block''
+|-
+|Locked In (only if vote was successful)||''hash of the block''||''height of the block''
+|-
+|Active or Failed||''hash of the block''||''height of the block''
 |}
 
 ====Compatibility====

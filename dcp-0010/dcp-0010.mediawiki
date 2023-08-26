@@ -183,7 +183,9 @@ time are:
 
 ==Deployment==
 
-This agenda will be deployed to mainnet using the standard Decred on-chain
+===Voting Agenda Parameters===
+
+This proposal will be deployed to mainnet using the standard Decred on-chain
 voting infrastructure as follows:
 
 {|
@@ -210,6 +212,24 @@ voting infrastructure as follows:
 |-
 |yes||change to the new consensus rules||0x0100 (Bit 8)
 |}
+|}
+
+===Voting Results===
+
+This proposal was approved by the stakeholder voting process and is now active.
+
+Implementations MAY optimize their enforcement activation logic to apply the new
+rules specified by this proposal to the <code>Active</code> block and all of its
+descendants as opposed to tallying historical votes.
+
+{|
+!Status!!Block Hash!!Block Height
+|-
+|Voting Started||0000000000000000199b4ae1b9fe1649ce0a357e728ca12ad46d453c6e8f4ee5||641152
+|-
+|Locked In||0000000000000000320d41ff60cf34d15ae836a7298c94c0e690f18ff1cfbdfa||649216
+|-
+|Active||00000000000000002f4c6aaf0e9cb4d5a74c238d9bf8b8909e2372776c7c214c||657280
 |}
 
 ==Compatibility==

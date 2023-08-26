@@ -2,7 +2,7 @@
 DCP: 0011
 Title: Change PoW to BLAKE3 and ASERT
 Author: Dave Collins <davec@decred.org>
-Status: Defined
+Status: Locked In
 Created: 2023-04-13
 License: CC0-1.0
 License-Code: ISC
@@ -624,7 +624,9 @@ increase the block production rate back to the desired target.
 
 ==Deployment==
 
-This agenda will be deployed to mainnet using the standard Decred on-chain
+===Voting Agenda Parameters===
+
+This proposal will be deployed to mainnet using the standard Decred on-chain
 voting infrastructure as follows:
 
 {|
@@ -651,6 +653,21 @@ voting infrastructure as follows:
 |-
 |yes||change to the new consensus rules||0x0004 (Bit 2)
 |}
+|}
+
+===Voting Results===
+
+This proposal was approved by the stakeholder voting process and is now locked
+in and awaiting activation.
+
+{|
+!Status!!Block Hash!!Block Height
+|-
+|Voting Started||0000000000000000d608dc4ec7fcae5c650353db68a77f2954df74c25462f337||778240
+|-
+|Locked In||0000000000000000896042b2b0536a4046e56ef505f20f7301ca7e042a5c218e||786304
+|-
+|Active||TBD||794368
 |}
 
 ==Compatibility==

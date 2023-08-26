@@ -140,7 +140,8 @@ in DCP0007
 |-
 |Mask||0x06 (Bits 1 and 2)
 |-
-|Choices||{| !Choice!!English Description!!Bits
+|Choices||{|
+!Choice!!English Description!!Bits
 |-
 |abstain||abstain voting for change||0x00
 |-

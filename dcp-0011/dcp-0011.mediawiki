@@ -325,6 +325,22 @@ block determined as follows:
 ** The anchor block MUST be set to block 1 once it is mined
 ** The target difficulty for block 1 MUST bet set to the initial starting difficulty for the network
 
+UPDATE:
+
+Now that the agenda votes for this proposal on the main network and version 3 of
+the test network have passed and the new rules are active, their concrete anchor
+blocks have been determined as follows:
+
+{|
+!Network!!Block Hash!!Block Height
+|-
+|mainnet||0000000000000000c293d8c67409d05e960447ea25cdaf770e864d995c764ef0||794367
+|-
+|testnet version 3||000000b396bfeaa6ae6fa9e3cee441d7215191630bdaa9b979a872985caed727||1170047
+|}
+
+Implementations MAY hard code these values for simplicity.
+
 ====ASERT Difficulty Calculation Formula====
 
 <!--

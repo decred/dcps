@@ -673,8 +673,7 @@ voting infrastructure as follows:
 
 ===Voting Results===
 
-This proposal was approved by the stakeholder voting process and is now locked
-in and awaiting activation.
+This proposal was approved by the stakeholder voting process and is now active.
 
 {|
 !Status!!Block Hash!!Block Height

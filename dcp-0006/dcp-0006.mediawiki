@@ -281,7 +281,7 @@ Additional consensus enforced characteristics:
 ** <code>sum(yes votes) + sum (no votes) >= MinRequiredVotes</code>
 * A <code>treasury spend</code> transaction shall not be allowed in a block if it does not reach enough yes votes  which is calculated as follows: (sum(votes cast) + sum(possible remaining votes)) * TVRM / TVRD
 * A <code>treasury spend</code> transaction shall not deplete the entire treasury. The treasury balance shall not become negative.
-* The sum of all <code>treasury spend</code> transactions within the most recent TPE shall not exceed 150% of avg(sum(<code>treasury spends</code>), TEW).
+* The sum of all <code>treasury spend</code> transactions within the most recent TEP shall not exceed 150% of avg(sum(<code>treasury spends</code>), TEW).
 * A <code>treasury spend</code> transaction shall not be allowed in a block if the secp256k1 public key is not well-known (encoded in chain parameters).
 * A <code>treasury spend</code> transaction shall not be allowed in a block if the Schnorr signature of the transaction does not match the provided well-known public key. The <code>treasury spend</code> transaction hash shall be calculated via the <code>SigHashAll</code> method.
 

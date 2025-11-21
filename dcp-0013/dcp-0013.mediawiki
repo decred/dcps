@@ -1,0 +1,329 @@
+<pre>
+DCP: 0013
+Title: New Max Treasury Expenditure Policy
+Author: Dave Collins <davec@decred.org>
+Status: Active
+Created: 2025-11-20
+License: CC0-1.0
+License-Code: ISC
+Requires: DCP0006
+Replaces: DCP0007
+</pre>
+
+==Abstract==
+
+This proposes implementing a new decentralized treasury maximum expenditure
+policy based on a percentage of the total balance of the treasury along with a
+minimum floor on how far the maximum expenditure may fall.
+
+The maximum expenditure is always clamped to the maximum balance of the
+treasury regardless of any other calculations.
+
+==Motivation==
+
+The current maximum expenditure policy limits treasury payouts per policy
+window to the total amount of income received by the treasury in the same
+window in addition to a 50% increase.
+
+It was well established at the time of the initial decentralized treasury
+proposal<ref>[[https://proposals-archive.decred.org/proposals/c96290a]]</ref>
+and implementation that the maximum expenditure policy would eventually need to
+be changed because it is overly restrictive and not stable over the long term
+due to the block reward constantly being reduced. Concretely, it means that the
+treasury is unable to spend most of its funds over time even though it has
+accumulated a large balance since the per-month income is relatively small and
+will only continue to get smaller.
+
+Nevertheless, due to historical events covered by [[../dcp-0007/dcp-0007.mediawiki|DCP-0007]],
+the current policy was retained as a temporary solution.
+
+The aforementioned in combination with a sustained low exchange rate has led to
+the expenditure policy no longer leaving as much leeway as desired to
+comfortably ensure prompt funding for both ongoing operations as well as
+potential larger infrequent payouts for one-time and long-running proposals.
+
+A new policy resolves the current pitfalls for the long term and also
+preemptively avoids potentially running into overly-restrictive spending limits.
+
+==Specification==
+
+===Integer Math===
+
+In order to facilitate better compatibility across implementations and
+languages, the formulas defined by this specification make use of integer math
+instead of floating point math as denoted by the use of the
+floor<ref>[[https://en.wikipedia.org/wiki/Floor_and_ceiling_functions|Wikipedia: Floor and ceiling functions]]</ref>
+function.  This is highly desirable for consensus code since floating point
+math can result in different results across languages due to issues such as
+rounding errors and uncertainty in their respective libraries.
+
+===Maximum Treasury Expenditure Policy===
+
+All treasury spends that exceed the maximum allowed amount per expenditure
+policy window as defined in this specification MUST be rejected.
+
+The following formulas precisely specify the calculations for the maximum
+allowed treasury expenditure for arbitrary heights.  This ensures the semantics
+are fully specified for all heights; however, it is important to note that they
+MUST only be applied to mainnet, and current testnet, for heights where the new
+rules are active per the associated on-chain vote.  Further, treasury spends
+MUST only be included in blocks that are a multiple of the treasury vote
+interval.
+
+<!--
+M(h) = \mathrm{min}\left(\mathrm{max}\left(\mathrm{max}\left(\left\lfloor\frac{\left(T_{bal}(h) + T_{sw}(h)\right) \cdot 4}{100} \right\rfloor, T_{floor}\right) - T_{sw}(h), 0\right), T_{bal}(h)\right)
+T_{sw}(h) = \sum_{j=\mathrm{max}\left(h-w, 0\right)}^{h-1}{S_{j}}
+T_{floor} = \left\lfloor\frac{c_{0}}{10}\right\rfloor \cdot T_{i} \cdot T_{m}
+w = T_{i} \cdot T_{m} \cdot T_{w}
+-->
+<img src="max_spend.svg" width="100%" height="390" />
+
+Explanation of terms:
+
+M = The maximum allowed expenditure at a given height<br />
+h = The height for which the maximum allowed expenditure is to be calculated<br />
+T<sub>bal</sub> = The balance of the treasury at a given height<br />
+T<sub>sw</sub> = The sum of all treasury spends in the treasury expenditure policy window leading up to a given height<br />
+T<sub>floor</sub> = The minimum value for the maximum allowed expenditure (1,078,127,767,296 on <code>mainnet</code>)<br />
+S<sub>j</sub> = The amount spent by the treasury at a given height<br />
+c<sub>0</sub> = The base coin subsidy before any reductions (3,119,582,664 on <code>mainnet</code>)<br />
+T<sub>i</sub> = The treasury spend vote interval (288 on <code>mainnet</code>)<br />
+T<sub>m</sub> = The treasury vote multiplier (12 on <code>mainnet</code>)<br />
+w = The number of blocks in the treasury expenditure policy window (6,912 on <code>mainnet</code>)<br />
+T<sub>w</sub> = The treasury expenditure window multiplier (2 on <code>mainnet</code>)<br />
+
+====Informal Description====
+
+Informally, the equations describe the following:
+
+* Define an expenditure policy window as the product of the treasury spend vote interval, the treasury vote multiplier, and the treasury expenditure window multiplier
+* Define the treasury expenditure floor as the total amount of subsidy added to the treasury during a treasury spend voting window, which is the product of the treasury spend vote interval and the treasury vote multiplier, prior to any subsidy reductions
+* Calculate the target maximum expenditure as 4% of the treasury balance as of the block the treasury spend is included in excluding any other treasury spends in the most recent expenditure policy window
+* Set the maximum expenditure to the greater of the target maximum expenditure and the treasury expenditure floor
+* Clamp the calculated maximum expenditure between 0 and the treasury balance
+* Enforce the sum of all treasury spends in the expenditure policy window does not exceed the previously-calculated and clamped maximum expenditure
+
+==Rationale==
+
+The primary reasons for a maximum expenditure policy are twofold:
+
+* It provides an additional security mechanism against implementation bugs or compromise of treasury keys potentially leading to the treasury account being drained too quickly before the issue can be addressed
+* It enforces a generic fiscal policy to discourage rampant spending by short-term interests
+
+The value of 4% of the total treasury balance was chosen because it provides a
+good tradeoff between the two aforementioned primary goals.  In particular, it
+targets a maximum loss of 20% of the overall treasury in the highly unlikely
+event of a compromise, but is also not so high that it no longer provides a
+sensible fiscal policy.
+
+The 20% figure comes from considering that a treasury expenditure policy window
+on the main network is about 24 days and it typically takes about 4 months, or
+120 days, to fully deploy a consensus change.  In other words, a maximum of 5
+treasury spends at 4% each could be made during that period for a total of 20%.
+
+Preventing the maximum allowed expenditure from falling below a minimum treasury
+expenditure floor provides long-term stability.  Without a floor, the policy
+would eventually end up with the same undesirable long-term behavior as the
+current policy.  Namely, it would lead to progressively being able to spend less
+and less each window in the event the treasury balance were to get low enough.
+
+The treasury expenditure floor was chosen to be the total amount of subsidy
+added to the treasury during a treasury spend voting window using the
+initial subsidy values from the start of the chain prior to any subsidy
+reductions since it results in consistent behavior throughout the entire
+emission schedule.
+
+==Deployment==
+
+===Voting Agenda Parameters===
+
+This proposal will be deployed to mainnet using the standard Decred on-chain
+voting infrastructure as follows:
+
+{|
+!Name!!Setting
+|-
+|Deployment Version||11
+|-
+|Agenda ID||maxtreasuryspend
+|-
+|Agenda Description||Change maximum treasury expenditure policy as defined in DCP0013
+|-
+|Start Time||1762992000 (Nov 13th, 2025 00:00:00 +0000 UTC)
+|-
+|Expire Time||1826064000 (Nov 13th, 2027 00:00:00 +0000 UTC)
+|-
+|Mask||0x0006 (Bits 1 and 2)
+|-
+|Choices||{|
+!Choice!!English Description!!Bits
+|-
+|abstain||abstain voting for change||0x00
+|-
+|no||keep the existing consensus rules||0x0002 (Bit 1)
+|-
+|yes||change to the new consensus rules||0x0004 (Bit 2)
+|}
+|}
+
+==Compatibility==
+
+This is a hard-forking change to the Decred consensus.  This means that once
+the agenda is voted in and becomes locked in, anybody running code that fully
+validates blocks must upgrade before the activation time or they will risk
+rejecting a chain containing a treasury spend that is invalid under the old
+rules.
+
+Other software that performs full validation will need to modify their consensus
+enforcement rules accordingly.
+
+The changes introduced by this proposal modify block acceptance criteria, but no
+transaction semantics are affected, therefore software other than full nodes or
+ones dealing directly with accounting of treasury transactions will not be
+affected by these changes.
+
+==Reference Implementation==
+
+The following implementation is a simplified version intended to clearly
+illustrate the exact semantics of this specification with self-contained code.
+See the [[#pull-requests|pull requests]] section for links to the full
+implementation.
+
+===Max Expenditure Calculation===
+
+<source lang="go">
+// calculateTreasuryBalance returns the treasury balance at the given height.
+func calculateTreasuryBalance(height int64) int64 {
+	// This would ordinarily implement code to determine the actual treasury
+	// balance at the given height and return it, but a hard coded value is
+	// returned here for the purposes of providing a self-contained function for
+	// the DCP.
+	return 53906388364801
+}
+
+// sumPastTreasurySpends returns the sum of all treasury spends between the
+// provided start and end heights, inclusive of the start height and exclusive
+// of the end height.
+func sumPastTreasurySpends(startHeight, endHeight int64) int64 {
+	var totalSpent int64
+	for i := startHeight; i < endHeight; i++ {
+		// This would ordinarily implement code to determine the actual amount
+		// of funds spent from the treasury and add it to the total.  However,
+		// it is ignored here for the purposes of providing a self-contained
+		// function for the DCP.
+	}
+	return totalSpent
+}
+
+// maxTreasuryExpenditureDCP0013 returns the maximum amount of funds that can be
+// spent from the treasury for the provided height using the max expenditure
+// policy defined herein.
+//
+// Note that the passed height is expected to correspond to a treasury vote
+// interval.
+func maxTreasuryExpenditureDCP0013(spendHeight int64) int64 {
+	// These parameters are ordinarily unique per chain and thus should be
+	// passed into the function via a chain parameters structure, however,
+	// they are defined as constants with the mainnet parameters here for the
+	// purposes of providing a self-contained function for the DCP.
+	const (
+		treasuryVoteInterval      = 288
+		treasuryVoteIntervalMul   = 12
+		treasuryExpenditureWindow = 2
+		baseSubsidy               = int64(3119582664)
+	)
+
+	// Each treasury expenditure policy window is defined by a specific number
+	// of treasury spend voting windows.
+	treasurySpendVoteWindow := int64(treasuryVoteInterval * treasuryVoteIntervalMul)
+	policyWindow := treasurySpendVoteWindow * treasuryExpenditureWindow
+
+	// The treasury expenditure floor is total amount of subsidy added to the
+	// treasury during a treasury spend voting window prior to any subsidy
+	// reductions.
+	treasuryExpenditureFloor := baseSubsidy / 10 * treasurySpendVoteWindow
+
+	// Sum up treasury spends inside the most recent policy window.
+	windowStart := spendHeight - policyWindow
+	spentRecent := sumPastTreasurySpends(windowStart, spendHeight)
+
+	// Determine what the treasury balance will be as of the height of the block
+	// the treasury spend will be included in to ensure it includes funds that
+	// are maturing in the block.
+	treasuryBalance := calculateTreasuryBalance(spendHeight)
+
+	// The treasury can spend up to a maximum of the larger of the following two
+	// values:
+	//
+	// 1. 4% of the treasury balance as of the block the treasury spend is
+	//    included in excluding any other treasury spends in the most recent
+	//    policy window
+	//
+	// 2. The treasury spend limit floor which is the total amount of subsidy
+	//    added to the treasury during an entire treasury voting window using
+	//    the initial subsidy values from the start of the chain prior to any
+	//    subsidy reductions
+	maxSpendable := (treasuryBalance + spentRecent) * 4 / 100
+	if maxSpendable < treasuryExpenditureFloor {
+		maxSpendable = treasuryExpenditureFloor
+	}
+
+	// The maximum expenditure allowed for the next block is the difference
+	// between the maximum possible and what has already been spent in the most
+	// recent policy window.  This is capped at zero on the lower end to account
+	// for cases where the policy already spent more than the allowed amount and
+	// the full treasury balance on the upper end.
+	var allowedToSpend int64
+	if maxSpendable > spentRecent {
+		allowedToSpend = maxSpendable - spentRecent
+	}
+	if allowedToSpend > treasuryBalance {
+		allowedToSpend = treasuryBalance
+	}
+
+	return allowedToSpend
+}
+</source>
+
+===Pull Requests===
+
+====Consensus Enforcement====
+
+A reference implementation of the required consensus changes to enforce the
+changes specified in this proposal is provided by
+[[https://github.com/decred/dcrd/pull/3549|pull request #3549]].
+
+====Deployment====
+
+A reference implementation of the required agenda definition is implemented by
+[[https://github.com/decred/dcrd/pull/3548|pull request #3548]].
+
+==Acknowledgements==
+
+===Collaborators===
+
+Thanks to the following individuals who provided valuable feedback during the
+review process of the consensus code and this proposal (alphabetical order):
+
+* Jake Yocom-Piatt
+* Jamie Holdstock ([[https://github.com/jholdstock|@jholdstock]])
+* Joe Gruffins ([[https://github.com/JoeGruffins|@JoeGruffins]])
+* Josh Rickmar ([[https://github.com/jrick|@jrick]])
+
+==References==
+
+===Inline References===
+
+<references />
+
+===Additional References===
+
+# [[https://proposals.decred.org/record/16a93c7|Politeia Proposal - Treasury Expenditure Policy Consensus Change]]
+
+==Copyright==
+
+This document is licensed under the
+[https://creativecommons.org/publicdomain/zero/1.0 CC0-1.0: Creative Commons CC0 1.0 Universal]
+license.
+
+The code is licensed under the [https://opensource.org/licenses/ISC ISC License].

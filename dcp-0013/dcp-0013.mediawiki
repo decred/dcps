@@ -166,6 +166,24 @@ voting infrastructure as follows:
 |}
 |}
 
+===Voting Results===
+
+This proposal was approved by the stakeholder voting process and is now active.
+
+Implementations MAY optimize their enforcement activation logic to apply the new
+rules specified by this proposal to the <code>Active</code> block and all of its
+descendants as opposed to tallying historical votes.
+
+{|
+!Status!!Block Hash!!Block Height
+|-
+|Voting Started||94c3ba7ace9800d983d70bbcbcc36a2d24bded9202949168bac1a005ce136921||1036288
+|-
+|Locked In||0949b1e5792c7033f9d9a5668f7229676f598d582b7a7f056968498d5225cc4e||1044352
+|-
+|Active||aa19fe7c6575ac70202e03a33917c12f9effb08f415252ebf43d561e627f266c||1052416
+|}
+
 ==Compatibility==
 
 This is a hard-forking change to the Decred consensus.  This means that once

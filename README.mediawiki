@@ -54,5 +54,5 @@ should be performed.
 |-
 |[[./dcp-0012/dcp-0012.mediawiki|0012]]||Change PoW/PoS Subsidy Split To 1/89||Active
 |-
-|[[./dcp-0013/dcp-0013.mediawiki|0013]]||New Max Treasury Expenditure Policy||Defined
+|[[./dcp-0013/dcp-0013.mediawiki|0013]]||New Max Treasury Expenditure Policy||Active
 |}
